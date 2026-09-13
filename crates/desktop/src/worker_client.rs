@@ -34,9 +34,9 @@ pub struct Telemetry {
     #[serde(default)]
     pub steer: f64,
     #[serde(default)]
-    pub approach: f64,
+    pub approach: Option<f64>,
     #[serde(default)]
-    pub avoidance: f64,
+    pub avoidance: Option<f64>,
     #[serde(default)]
     pub motor_mode: String,
     #[serde(default)]

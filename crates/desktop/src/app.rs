@@ -10,6 +10,7 @@ pub struct Desktop {
     pub worker: Option<Worker>,
     pub telemetry: Telemetry,
     pub brain_view: crate::brain_view::BrainView,
+    pub music: crate::music::Music,
     pub tutorial: crate::tutorial::Tutorial,
     pub color_demos: Option<crate::tutorial_demo::ColorDemos>,
     pub focused: bool,
@@ -61,6 +62,7 @@ impl Desktop {
         let journal = std::fs::File::create(run_dir.join("events.jsonl")).ok();
         let mut app = Self {
             brain_view: crate::brain_view::BrainView::load(),
+            music: crate::music::Music::new(),
             tutorial: crate::tutorial::Tutorial::default(),
             color_demos: None,
             focused: true,
@@ -149,6 +151,7 @@ impl Desktop {
             let Some(event) = event else { break };
             match event {
                 Event::Loaded { profile, telemetry } => {
+                    self.music.reset();
                     self.sim.loaded(profile);
                     self.telemetry = telemetry;
                     match crate::tutorial_demo::ColorDemos::load(
@@ -187,6 +190,7 @@ impl Desktop {
                 } => match self.sim.accept(&reply) {
                     Ok(true) => {
                         self.latency = ms;
+                        self.music.accept(&reply, &telemetry);
                         self.telemetry = telemetry;
                         self.trace.push(reply.action.steer as f32);
                         if self.trace.len() > 96 {
@@ -220,6 +224,7 @@ impl Desktop {
                         }
                         self.sim.restored(w, step_id);
                         self.brain_view.reset();
+                        self.music.reset();
                         self.telemetry = telemetry;
                         self.visual_revision = u64::MAX;
                         self.vision_texture = None;
@@ -343,6 +348,18 @@ impl Desktop {
                 }
             }
         }
+        self.music.update(
+            !self.sim.want_pause
+                && matches!(
+                    self.sim.phase,
+                    Phase::Paused | Phase::Waiting | Phase::Applying
+                )
+                && self.sim.world.outcome == world_core::Outcome::Running
+                && !self.tutorial.active()
+                && self.restore_name.is_none()
+                && !self.saving
+                && self.focused,
+        );
     }
     pub fn reset(&mut self, bookmark: bool) {
         if matches!(self.sim.phase, Phase::Loading | Phase::Restoring)
@@ -408,6 +425,7 @@ impl Desktop {
         self.log(serde_json::json!({"event":"select_level","level":level+1,"name":world_core::LEVELS[level].name}));
     }
     fn queue_restore(&mut self, world: World, name: &str) {
+        self.music.reset();
         self.tutorial.cancel_start();
         self.edit_notice = None;
         self.stroke = None;

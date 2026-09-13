@@ -1,5 +1,7 @@
 const DURATIONS: [f32; 16] = [
-    0.85, 0.7, 2.4, 1., 0.7, 2.4, 1.1, 2.6, 2.5, 8.5, 1.9, 2.2, 2.6, 4.2, 4.2, 3.7,
+    // The nervous-system explanation spans beats 9–10: 12 s to read and
+    // notice the new views, followed by a 3 s hold before offering help.
+    0.85, 0.7, 2.4, 1., 0.7, 2.4, 1.1, 2.6, 2.5, 12., 3., 2.2, 2.6, 4.2, 4.2, 3.7,
 ];
 pub const READY: usize = 16;
 pub const DONE: usize = 17;

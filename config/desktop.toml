@@ -57,6 +57,15 @@ learning = false
 max_inflight = 1
 max_message_bytes = 1048576
 
+[music]
+enabled = true
+volume = 0.35
+tempo_bpm = 90
+stale_after_ms = 1000
+pause_release_ms = 400
+reset_release_ms = 30
+volume_ramp_ms = 60
+
 [controller.chromatic]
 profile = "eye-level-v2 / ChromaticValenceV1"
 readout_scale = 0.025

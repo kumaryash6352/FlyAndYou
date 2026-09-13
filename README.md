@@ -14,7 +14,7 @@ From a terminal:
 ./scripts/run.sh
 ```
 
-After loading, **Press Enter to Start** holds until you are ready. First Flight then opens with a handwritten animated introduction. Terrain stays visible from the opening close-up through the pan and zoom; Fly and the Goal appear in turn. The brain scan and **FlyCam™** appear on the “simulated nervous system” line. Fly waits through the narration, then begins moving when you first paint. **Skip intro** goes directly to that waiting beat; **Replay intro** under Controls resets the world and brain to show it again. The intro pauses when the window loses focus.
+After loading, **Press Enter to Start** holds until you are ready. First Flight then opens with a handwritten animated introduction. Terrain stays visible from the opening close-up through the pan and zoom; Fly and the Goal appear in turn. The brain scan and **FlyCam™** appear on the “simulated nervous system” line, which stays on screen for 15 seconds to leave time to read and inspect both views. Fly waits through the narration, then begins moving when you first paint. **Skip intro** goes directly to that waiting beat; **Replay intro** under Controls resets the world and brain to show it again. The intro pauses when the window loses focus.
 
 During the red and yellow lines, a temporary painted surface appears ahead of Fly. FlyCam shows that surface and the scan replays actual responses recorded from this model with a fixed observer. Each recording starts from the same initial state; neither demonstration changes the player's world or brain. Setup, launch, and packaging scripts refresh the recordings when their model or images change.
 
@@ -25,6 +25,8 @@ The fly sees ahead from eye level in a **3D perspective projection**. Its world 
 Rough solid walls and a ceiling line the left, right, and top map edges. You can paint their inward faces and borders to give the fly visible cues. Like the original ground, their geometry stays fixed. The bottom gap remains open and hazardous.
 
 Yellow visible marks encourage approach; red marks trigger a turn and a brief committed retreat. Separate trigger and rearm thresholds prevent repeated flips while the old neural response fades. If strong red persists after retreat, the fly holds. Without strong color evidence it explores, eventually turning to search. **Brain** reveals its current decision and yellow-pull/red-push signal strengths. These color associations are explicitly engineered game rules.
+
+**Music** in the toolbox turns a quiet procedural score on or off; the adjacent slider controls volume. Live modeled activity shapes soft plucks, a buzzing tonal layer, and little rhythmic accents. Yellow-pull evidence warms the sound, red-push evidence adds tension, and changes in sampled neurons vary the phrase. Music fades when paused and restarts its phrase on reset or bookmark restore. These are authored musical mappings, not biological brain recordings. [Music behavior and implementation](docs/neural-music.md).
 
 | Control | Action |
 |---|---|

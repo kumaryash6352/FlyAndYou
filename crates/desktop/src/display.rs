@@ -299,6 +299,17 @@ impl Desktop {
                     }
                     if button(ui, "Brain", self.details).clicked() && first { self.details = !self.details; }
                 });
+                ui.horizontal(|ui| {
+                    ui.checkbox(&mut self.music.enabled, "Music")
+                        .on_hover_text("Live modeled brain activity shapes soft notes, buzz, and little taps. Yellow warms the sound; red adds tension. Pausing lets it fade.");
+                    ui.add_enabled(self.music.enabled, Slider::new(&mut self.music.volume, 0.0..=1.0)
+                        .show_value(false).text("volume"));
+                });
+                if let Some(error) = self.music.error().map(str::to_owned) {
+                    if ui.small_button("Retry music").on_hover_text(error).clicked() && first {
+                        self.music.open_output();
+                    }
+                }
                 if self.help {
                     ui.separator();
                     ui.label("Drag: draw · Space: run / pause · 1–4: tools");
@@ -326,9 +337,13 @@ impl Desktop {
 
                     ui.label(format!("{} neurons · {} connections",self.telemetry.nodes,self.telemetry.edges));
                     ui.label(format!("{:.0} ms / decision · learning off", self.latency));
-                    if !self.telemetry.motor_mode.is_empty() {
-                        ui.label(format!("Yellow pull {:.2} · Red push {:.2}", self.telemetry.approach, self.telemetry.avoidance))
-                            .on_hover_text("Neural activity above a fixed neutral baseline. These are signal strengths, not probabilities.");
+                    if let (Some(approach), Some(avoidance)) = (self.telemetry.approach, self.telemetry.avoidance) {
+                        if approach.is_finite() && avoidance.is_finite() {
+                            ui.label(format!("Yellow pull {approach:.2} · Red push {avoidance:.2}"))
+                                .on_hover_text("Neural activity above a fixed neutral baseline. These are signal strengths, not probabilities.");
+                        }
+                    } else if !self.telemetry.motor_mode.is_empty() {
+                        ui.label("Neural color evidence unavailable");
                     }
                     ui.label("Actual sampled anatomy. Orange shows activity above recent baseline; blue shows structure.");
                 }

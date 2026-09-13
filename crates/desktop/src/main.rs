@@ -3,6 +3,7 @@ mod brain_view;
 mod campaign_view;
 mod coordinator;
 mod display;
+mod music;
 mod tutorial;
 mod tutorial_demo;
 mod tutorial_view;
