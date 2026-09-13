@@ -36,6 +36,7 @@ pub struct Desktop {
     pub sent_step: Option<u64>,
     pub visual_revision: u64,
     pub notice: String,
+    pub edit_notice: Option<([f64; 2], String)>,
     pub zoom: f32,
     pub pan: egui::Vec2,
     pub help: bool,
@@ -88,6 +89,7 @@ impl Desktop {
             sent_step: None,
             visual_revision: u64::MAX,
             notice: String::new(),
+            edit_notice: None,
             zoom: 0.7,
             pan: egui::Vec2::ZERO,
             help: false,
@@ -225,6 +227,7 @@ impl Desktop {
                         self.trail.clear();
                         self.trace.clear();
                         self.notice.clear();
+                        self.edit_notice = None;
                         self.log(serde_json::json!({"event":"restore","epoch":epoch,"tick":tick}));
                     }
                 }
@@ -277,6 +280,7 @@ impl Desktop {
                         self.committed_gesture = Some(gesture);
                         self.log(serde_json::json!({"event":"live_stroke","gesture":gesture,"tool":s.tool,"points":s.points,"radius":s.radius,"color":s.color,"revision":self.sim.world.revision,"physics_tick":self.sim.world.tick}));
                         self.notice.clear();
+                        self.edit_notice = None;
                         if self.sim.want_pause {
                             self.vision = self.sim.world.observe();
                             self.vision_texture = None;
@@ -284,7 +288,7 @@ impl Desktop {
                         }
                     }
                     Ok(_) => {}
-                    Err(e) => self.notice = e,
+                    Err(e) => self.edit_notice = s.points.last().copied().map(|at| (at, e)),
                 }
             }
             if let Some(redo) = self.pending_undo.take() {
@@ -403,6 +407,7 @@ impl Desktop {
     }
     fn queue_restore(&mut self, world: World, name: &str) {
         self.tutorial.cancel_start();
+        self.edit_notice = None;
         self.stroke = None;
         self.pending_strokes.clear();
         self.stroke_dirty = false;

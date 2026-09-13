@@ -257,11 +257,6 @@ impl Desktop {
                             });
                     });
                     if first && level != self.sim.world.level { self.load_level(level); }
-                    if self.sim.world.level > 0 {
-                        ui.add(Label::new(self.sim.world.level_spec().rule).wrap());
-                        let status = crate::campaign_view::status(&self.sim.world);
-                        if !status.is_empty() { ui.label(RichText::new(status).weak()); }
-                    }
                     if self.sim.world.outcome == Outcome::Won {
                         if self.sim.world.level + 1 < world_core::LEVELS.len() {
                             if ui.add_enabled(ready, Button::new("Next level  [N]")).clicked() && first {
@@ -288,35 +283,17 @@ impl Desktop {
                         if self.color == c { ui.painter().rect_stroke(r,0,Stroke::new(1.,Color32::WHITE),StrokeKind::Inside); }
                         if res.clicked() && first { self.color = c; }
                         res.on_hover_text(match c {
-                            [232,186,60] => "Yellow draws the fly closer.",
-                            [195,80,57] => "Red makes the fly turn away.",
-                            _ => "Neutral ink: no direct attraction or avoidance.",
+                            [232,186,60] => "Yellow",
+                            [195,80,57] => "Red",
+                            [94,132,164] => "Blue",
+                            [92,119,72] => "Green",
+                            _ => "Black",
                         });
                     }
                     ui.add(Slider::new(&mut self.radius, if self.tool.solid() { 4.0..=24.0 } else { 1.0..=24.0 }).show_value(false).text("size"));
                 });
-                ui.label(if self.tool.solid() {
-                    if self.sim.world.level == 0 { "Scribble ground ahead. It won't wait for you." }
-                    else if self.sim.world.level_spec().ground_zones.is_empty() { "Fixed ground here. Use Ink to steer Fly." }
-                    else { "Ground stays inside the dashed boxes." }
-                } else { "Ink sticks to surfaces. Yellow attracts; red repels." });
-                if ready && self.sim.world.outcome == Outcome::Running {
-                    let intent = match self.telemetry.motor_mode.as_str() {
-                        "approach" => "Approaching yellow",
-                        "retreat" => "Retreating from red",
-                        "hold" => "Holding near red",
-                        "search" => "Searching",
-                        _ => "",
-                    };
-                    if !intent.is_empty() {
-                        let direction = if self.telemetry.steer == 0. { "Still" }
-                            else if self.telemetry.heading < 0 { "Left" } else { "Right" };
-                        ui.label(RichText::new(format!("{direction}: {intent}")).weak())
-                            .on_hover_text("Its current movement decision. Ground can still block it. Space holds this decision while paused.");
-                    }
-                }
                 ui.horizontal(|ui| {
-                    if button(ui, "How to / H", self.help).clicked() && first { self.help = !self.help; }
+                    if button(ui, "Controls / H", self.help).clicked() && first { self.help = !self.help; }
                     if ui.add_enabled(!self.tutorial.active(), Button::new(if self.zoom < 1. { "Follow" } else { "Whole map" }).small()).clicked() && first {
                         self.zoom = if self.zoom < 1. { 1. } else { 0.7 }; self.pan = Vec2::ZERO;
                     }
@@ -324,18 +301,34 @@ impl Desktop {
                 });
                 if self.help {
                     ui.separator();
-                    ui.label("Keep the little menace alive. Draw bridges before it drops. Yellow on ground or objects draws it closer; red makes it turn away. Ink cannot hang in the air. Its world starts gray.");
-                    ui.label("It commits briefly after turning. With no strong color to follow, it searches and eventually turns around.");
-                    ui.label("Drag to draw. Space pauses. 1–4 switch tools. Cmd/Ctrl Z undoes a whole scribble. The fly keeps moving while you draw.");
+                    ui.label("Drag: draw · Space: run / pause · 1–4: tools");
+                    ui.label("Cmd/Ctrl Z: undo · Shift Cmd/Ctrl Z: redo");
+                    ui.label("R: reset · F5 / F9: save / restore · N: next level");
                     if ui.add_enabled(ready && !self.tutorial.active(), Button::new("Replay intro")).clicked() && first { self.replay_tutorial(); }
                 }
                 if self.details {
                     ui.separator();
+                    if self.sim.world.outcome == Outcome::Running {
+                        let intent = match self.telemetry.motor_mode.as_str() {
+                            "approach" => "Approaching yellow",
+                            "retreat" => "Retreating from red",
+                            "hold" => "Holding near red",
+                            "search" => "Searching",
+                            _ => "",
+                        };
+                        if !intent.is_empty() {
+                            let direction = if self.telemetry.steer == 0. { "Still" }
+                                else if self.telemetry.heading < 0 { "Left" } else { "Right" };
+                            ui.label(RichText::new(format!("{direction}: {intent}")).weak())
+                                .on_hover_text("Current neural motor output.");
+                        }
+                    }
+
                     ui.label(format!("{} neurons · {} connections",self.telemetry.nodes,self.telemetry.edges));
                     ui.label(format!("{:.0} ms / decision · learning off", self.latency));
                     if !self.telemetry.motor_mode.is_empty() {
                         ui.label(format!("Yellow pull {:.2} · Red push {:.2}", self.telemetry.approach, self.telemetry.avoidance))
-                            .on_hover_text("Neural activity above a fixed neutral baseline. Stronger red triggers retreat; stronger yellow encourages approach. These are signal strengths, not probabilities.");
+                            .on_hover_text("Neural activity above a fixed neutral baseline. These are signal strengths, not probabilities.");
                     }
                     ui.label("Actual sampled anatomy. Orange shows activity above recent baseline; blue shows structure.");
                 }
@@ -404,6 +397,9 @@ impl Desktop {
         }
         if !self.tutorial.active() {
             crate::campaign_view::draw(&painter, rect, scale, &self.sim.world);
+            if let Some((at, message)) = &self.edit_notice {
+                crate::campaign_view::edit_feedback(&painter, rect, scale, *at, message);
+            }
         }
         if !self.tutorial.active() && ctx.input(|i| i.key_down(Key::C)) {
             for y in 0..90 {
@@ -542,6 +538,7 @@ impl Desktop {
                     if self.tutorial.begin_paint() {
                         self.log(serde_json::json!({"event":"tutorial_complete","physics_tick":self.sim.world.tick}));
                     }
+                    self.edit_notice = None;
                     self.gesture += 1;
                     self.stroke_dirty = true;
                     self.spacing = 1.;
