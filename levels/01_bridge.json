@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "id": "01_bridge",
+  "title": "First Flight",
+  "world_px": [640, 360],
+  "cell_px": 4,
+  "spawn_center_px": [64, 272],
+  "base_solid_rects_px": [[0, 280, 192, 80], [288, 280, 352, 80]],
+  "edge_terrain": {"sides": ["left", "right", "top"], "wall_width_px": [16, 24], "ceiling_depth_px": [12, 20], "shape": "uneven stepped walls and ceiling", "paintable": true},
+  "goal_rect_px": [560, 240, 24, 40],
+  "hazard_rects_px": [[192, 352, 96, 8]],
+  "protected_rects_px": [[0, 0, 640, 4], [0, 0, 4, 360], [636, 0, 4, 360], [552, 232, 40, 48]],
+  "initial_visual_primitives": [],
+  "tools": ["solid_brush", "visual_brush", "erase_solid", "erase_visual"],
+  "jump_enabled": false,
+  "tutorial": "Animated introduction; first painting gesture starts play. No gameplay time limit.",
+  "notes": "Geometry fixture only. No successful neural traversal or lure preference has been established. Add only cues that pass the separate steering assay. Goal overlap is a host-side win condition, not controller input."
+}

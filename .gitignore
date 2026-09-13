@@ -1,0 +1,14 @@
+/target/
+/.venv/
+/data/raw/
+/data/cache/
+/runs/*
+!/runs/.gitkeep
+__pycache__/
+*.pyc
+.DS_Store
+
+/FlyAndYou.app/
+
+# Local contributor briefing
+/AGENTS.md

@@ -1,0 +1,15 @@
+#+title: Fly & You
+#+options: toc:nil num:nil
+
+A native Bevy + bevy-egui drawing platformer. You cannot control the tiny black fly directly. The fly is a fly.
+
+Uses [[https://male-cns.janelia.org/]]
+
+* Play
+
+With the local dependencies prepared:
+
+#+begin_src sh
+./scripts/run.sh
+#+end_src
+

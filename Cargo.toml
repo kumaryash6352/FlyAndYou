@@ -1,0 +1,14 @@
+[workspace]
+members = ["crates/world_core", "crates/wire_types", "crates/desktop"]
+resolver = "2"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 2
