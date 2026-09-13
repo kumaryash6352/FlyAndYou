@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "mode": "MaleCNS fixed controller",
+  "nodes": 164606,
+  "edges": 25558671,
+  "sensor": "eye-level-v2 / SurfaceRetinaV1",
+  "input_population": "Traced ol_sensory, R-prefixed type, rootSide or somaSide L/R",
+  "readout_population": "visual_projection somaSide L/R; bilateral salience into declared approach/search motor interface",
+  "input_counts": {
+    "L": 1733,
+    "R": 2374
+  },
+  "mapping_fallback_count": 4107,
+  "mapping_rule": "bodyId-sorted stratified samples in corresponding half; unresolved anatomical coordinates",
+  "current": "max((R-B-48)/200,0), encoded RGB8",
+  "dynamics": {
+    "kind": "nonnegative leaky rate approximation",
+    "dt_ms": 20,
+    "retention": 0.7,
+    "recurrence_gain": 0.9,
+    "noise": 0.0005,
+    "readout_gain": 3000.0,
+    "readout_bias": 0.00023,
+    "readout_retention": 0.65,
+    "explore_speed": 0.52,
+    "search_steps": 35
+  },
+  "learning": false,
+  "files": {
+    "weights.npz": "fa2216b91643aad74a3c8850b4c926361afa7413e1ad3c2e2c100be55b1f40f7",
+    "mapping.npz": "6b8803bea2f8dd14a4805581580dd16e4274f06cce5f0e976cc81897ad1344a7"
+  },
+  "source_lock_sha256": "bcd767d49862a0237a71081168d00656d978a7b61590074457c3b2e19a7edddd",
+  "prepare_seconds": 18.622019416070543,
+  "calibration": "Fast live-drawing game tuning; prior slow play checks are historical",
+  "color_rule": "Unpainted surfaces grayscale; only physical surface paint supplies chroma; geometric flag"
+}

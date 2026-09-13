@@ -1,0 +1,2697 @@
+{
+  "trials": [
+    {
+      "scene": "red_wall_right",
+      "method": "current",
+      "seed": 101,
+      "displacement": 30.000000009686744,
+      "trace": [
+        {
+          "steer": 0.2647249570395052,
+          "jump": false,
+          "x": 343.8514955463373,
+          "y": 272.0,
+          "vx": 46.591592438952915,
+          "facing": 1,
+          "tick": 10,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.5220712220756784,
+          "jump": false,
+          "x": 352.28423134901453,
+          "y": 272.0,
+          "vx": 91.88453508531938,
+          "facing": 1,
+          "tick": 20,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.6893462943491909,
+          "jump": false,
+          "x": 364.14471787515765,
+          "y": 272.0,
+          "vx": 121.3249478054576,
+          "facing": 1,
+          "tick": 30,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.7980750913269741,
+          "jump": false,
+          "x": 370.00000000968674,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": 1,
+          "tick": 40,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.8687488093625332,
+          "jump": false,
+          "x": 370.00000000968674,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": 1,
+          "tick": 50,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.9146867260856466,
+          "jump": false,
+          "x": 370.00000000968674,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": 1,
+          "tick": 60,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.9445463719556703,
+          "jump": false,
+          "x": 370.00000000968674,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": 1,
+          "tick": 70,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.9639551417711857,
+          "jump": false,
+          "x": 370.00000000968674,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": 1,
+          "tick": 80,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.9765708421512707,
+          "jump": false,
+          "x": 370.00000000968674,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": 1,
+          "tick": 90,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.9847710473983259,
+          "jump": false,
+          "x": 370.00000000968674,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": 1,
+          "tick": 100,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.9901011808089119,
+          "jump": false,
+          "x": 370.00000000968674,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": 1,
+          "tick": 110,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.9935657675257927,
+          "jump": false,
+          "x": 370.00000000968674,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": 1,
+          "tick": 120,
+          "outcome": "Running"
+        }
+      ]
+    },
+    {
+      "scene": "red_wall_right",
+      "method": "current",
+      "seed": 202,
+      "displacement": 30.000000009816233,
+      "trace": [
+        {
+          "steer": 0.2652630794140696,
+          "jump": false,
+          "x": 343.8571781186126,
+          "y": 272.0,
+          "vx": 46.68630197687625,
+          "facing": 1,
+          "tick": 10,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.5224210016191453,
+          "jump": false,
+          "x": 352.2973959747859,
+          "y": 272.0,
+          "vx": 91.94609628496957,
+          "facing": 1,
+          "tick": 20,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.6895736510524444,
+          "jump": false,
+          "x": 364.1623149073039,
+          "y": 272.0,
+          "vx": 121.36496258523022,
+          "facing": 1,
+          "tick": 30,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.7982228731840888,
+          "jump": false,
+          "x": 370.00000000981623,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": 1,
+          "tick": 40,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.8688448675696577,
+          "jump": false,
+          "x": 370.00000000981623,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": 1,
+          "tick": 50,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.9147491639202775,
+          "jump": false,
+          "x": 370.00000000981623,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": 1,
+          "tick": 60,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.9445869565481804,
+          "jump": false,
+          "x": 370.00000000981623,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": 1,
+          "tick": 70,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.9639815217563172,
+          "jump": false,
+          "x": 370.00000000981623,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": 1,
+          "tick": 80,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.9765879891416062,
+          "jump": false,
+          "x": 370.00000000981623,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": 1,
+          "tick": 90,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.984782192942044,
+          "jump": false,
+          "x": 370.00000000981623,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": 1,
+          "tick": 100,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.9901084254123287,
+          "jump": false,
+          "x": 370.00000000981623,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": 1,
+          "tick": 110,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.9935704765180137,
+          "jump": false,
+          "x": 370.00000000981623,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": 1,
+          "tick": 120,
+          "outcome": "Running"
+        }
+      ]
+    },
+    {
+      "scene": "red_wall_right",
+      "method": "candidate",
+      "seed": 101,
+      "displacement": -147.7519999999992,
+      "trace": [
+        {
+          "steer": -0.85,
+          "yellow": 5.6121149100363255e-05,
+          "red": 0.0031504465732723475,
+          "mode": "escape",
+          "heading": -1,
+          "x": 334.192,
+          "y": 272.0,
+          "vx": -105.60000000000001,
+          "facing": -1,
+          "tick": 10,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.85,
+          "yellow": 0.00011870215530507267,
+          "red": 0.002593089360743761,
+          "mode": "escape",
+          "heading": -1,
+          "x": 319.9360000000001,
+          "y": 272.0,
+          "vx": -149.6,
+          "facing": -1,
+          "tick": 20,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.85,
+          "yellow": 4.0580795030109584e-05,
+          "red": 0.000772888888604939,
+          "mode": "escape",
+          "heading": -1,
+          "x": 304.9760000000003,
+          "y": 272.0,
+          "vx": -149.6,
+          "facing": -1,
+          "tick": 30,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.85,
+          "yellow": 1.582530967425555e-05,
+          "red": 0.0001995861530303955,
+          "mode": "escape",
+          "heading": -1,
+          "x": 290.0160000000005,
+          "y": 268.0,
+          "vx": -149.6,
+          "facing": -1,
+          "tick": 40,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.85,
+          "yellow": 1.4527628081850708e-05,
+          "red": 5.659385351464152e-05,
+          "mode": "escape",
+          "heading": -1,
+          "x": 275.05600000000067,
+          "y": 268.0,
+          "vx": -149.6,
+          "facing": -1,
+          "tick": 50,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.85,
+          "yellow": 9.76983574219048e-06,
+          "red": 2.1391490008682013e-05,
+          "mode": "escape",
+          "heading": -1,
+          "x": 260.09600000000086,
+          "y": 268.0,
+          "vx": -149.6,
+          "facing": -1,
+          "tick": 60,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.85,
+          "yellow": 1.1648269719444215e-05,
+          "red": 1.082669768948108e-05,
+          "mode": "escape",
+          "heading": -1,
+          "x": 245.13600000000082,
+          "y": 268.0,
+          "vx": -149.6,
+          "facing": -1,
+          "tick": 70,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.85,
+          "yellow": 4.2364554246887565e-06,
+          "red": 6.833870429545641e-06,
+          "mode": "escape",
+          "heading": -1,
+          "x": 230.17600000000073,
+          "y": 268.0,
+          "vx": -149.6,
+          "facing": -1,
+          "tick": 80,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.52,
+          "yellow": 8.05423769634217e-06,
+          "red": 3.9532314985990524e-06,
+          "mode": "search",
+          "heading": -1,
+          "x": 219.70400000000075,
+          "y": 268.0,
+          "vx": -91.52000000000001,
+          "facing": -1,
+          "tick": 90,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.52,
+          "yellow": 8.319329936057329e-07,
+          "red": 4.192595952190459e-06,
+          "mode": "search",
+          "heading": -1,
+          "x": 210.55200000000076,
+          "y": 268.0,
+          "vx": -91.52000000000001,
+          "facing": -1,
+          "tick": 100,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.52,
+          "yellow": 3.2609968911856413e-06,
+          "red": 4.382483894005418e-06,
+          "mode": "search",
+          "heading": -1,
+          "x": 201.40000000000077,
+          "y": 268.0,
+          "vx": -91.52000000000001,
+          "facing": -1,
+          "tick": 110,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.52,
+          "yellow": 2.5579938665032387e-06,
+          "red": 8.151153451763093e-06,
+          "mode": "search",
+          "heading": -1,
+          "x": 192.2480000000008,
+          "y": 268.0,
+          "vx": -91.52000000000001,
+          "facing": -1,
+          "tick": 120,
+          "outcome": "Running"
+        }
+      ]
+    },
+    {
+      "scene": "red_wall_right",
+      "method": "candidate",
+      "seed": 202,
+      "displacement": -147.7519999999992,
+      "trace": [
+        {
+          "steer": -0.85,
+          "yellow": 5.5120326578617096e-05,
+          "red": 0.003148771822452545,
+          "mode": "escape",
+          "heading": -1,
+          "x": 334.192,
+          "y": 272.0,
+          "vx": -105.60000000000001,
+          "facing": -1,
+          "tick": 10,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.85,
+          "yellow": 0.00012276810593903065,
+          "red": 0.002596805104985833,
+          "mode": "escape",
+          "heading": -1,
+          "x": 319.9360000000001,
+          "y": 272.0,
+          "vx": -149.6,
+          "facing": -1,
+          "tick": 20,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.85,
+          "yellow": 4.132201138418168e-05,
+          "red": 0.0007701067952439189,
+          "mode": "escape",
+          "heading": -1,
+          "x": 304.9760000000003,
+          "y": 272.0,
+          "vx": -149.6,
+          "facing": -1,
+          "tick": 30,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.85,
+          "yellow": 1.1267024092376232e-05,
+          "red": 0.00019978222553618252,
+          "mode": "escape",
+          "heading": -1,
+          "x": 290.0160000000005,
+          "y": 268.0,
+          "vx": -149.6,
+          "facing": -1,
+          "tick": 40,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.85,
+          "yellow": 1.180985418614e-05,
+          "red": 5.1867798902094364e-05,
+          "mode": "escape",
+          "heading": -1,
+          "x": 275.05600000000067,
+          "y": 268.0,
+          "vx": -149.6,
+          "facing": -1,
+          "tick": 50,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.85,
+          "yellow": 8.388160495087504e-06,
+          "red": 1.8146965885534883e-05,
+          "mode": "escape",
+          "heading": -1,
+          "x": 260.09600000000086,
+          "y": 268.0,
+          "vx": -149.6,
+          "facing": -1,
+          "tick": 60,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.85,
+          "yellow": 7.444468792527914e-06,
+          "red": 1.2392963981255889e-05,
+          "mode": "escape",
+          "heading": -1,
+          "x": 245.13600000000082,
+          "y": 268.0,
+          "vx": -149.6,
+          "facing": -1,
+          "tick": 70,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.85,
+          "yellow": 2.5337212719023228e-06,
+          "red": 6.922884494997561e-06,
+          "mode": "escape",
+          "heading": -1,
+          "x": 230.17600000000073,
+          "y": 268.0,
+          "vx": -149.6,
+          "facing": -1,
+          "tick": 80,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.52,
+          "yellow": 9.216819307766855e-06,
+          "red": 2.8444919735193253e-06,
+          "mode": "search",
+          "heading": -1,
+          "x": 219.70400000000075,
+          "y": 268.0,
+          "vx": -91.52000000000001,
+          "facing": -1,
+          "tick": 90,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.52,
+          "yellow": 6.880218279547989e-06,
+          "red": 2.4788023438304663e-06,
+          "mode": "search",
+          "heading": -1,
+          "x": 210.55200000000076,
+          "y": 268.0,
+          "vx": -91.52000000000001,
+          "facing": -1,
+          "tick": 100,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.52,
+          "yellow": 2.3605680325999856e-06,
+          "red": 3.7889258237555623e-06,
+          "mode": "search",
+          "heading": -1,
+          "x": 201.40000000000077,
+          "y": 268.0,
+          "vx": -91.52000000000001,
+          "facing": -1,
+          "tick": 110,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.52,
+          "yellow": 1.3761746231466532e-06,
+          "red": 5.316949682310224e-06,
+          "mode": "search",
+          "heading": -1,
+          "x": 192.2480000000008,
+          "y": 268.0,
+          "vx": -91.52000000000001,
+          "facing": -1,
+          "tick": 120,
+          "outcome": "Running"
+        }
+      ]
+    },
+    {
+      "scene": "red_wall_left",
+      "method": "current",
+      "seed": 101,
+      "displacement": -29.999999999614886,
+      "trace": [
+        {
+          "steer": -0.2647249570395052,
+          "jump": false,
+          "x": 336.1485044536627,
+          "y": 272.0,
+          "vx": -46.591592438952915,
+          "facing": -1,
+          "tick": 10,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.5220712220756784,
+          "jump": false,
+          "x": 327.71576865098547,
+          "y": 272.0,
+          "vx": -91.88453508531938,
+          "facing": -1,
+          "tick": 20,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.6893462943491909,
+          "jump": false,
+          "x": 315.85528212484235,
+          "y": 272.0,
+          "vx": -121.3249478054576,
+          "facing": -1,
+          "tick": 30,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.7980750913269741,
+          "jump": false,
+          "x": 310.0000000003851,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": -1,
+          "tick": 40,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.8687488093625332,
+          "jump": false,
+          "x": 310.0000000003851,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": -1,
+          "tick": 50,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.9146867260856466,
+          "jump": false,
+          "x": 310.0000000003851,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": -1,
+          "tick": 60,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.9445463719556703,
+          "jump": false,
+          "x": 310.0000000003851,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": -1,
+          "tick": 70,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.9639551417711857,
+          "jump": false,
+          "x": 310.0000000003851,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": -1,
+          "tick": 80,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.9765708421512707,
+          "jump": false,
+          "x": 310.0000000003851,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": -1,
+          "tick": 90,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.9847710473983259,
+          "jump": false,
+          "x": 310.0000000003851,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": -1,
+          "tick": 100,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.9901011808089119,
+          "jump": false,
+          "x": 310.0000000003851,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": -1,
+          "tick": 110,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.9935657675257927,
+          "jump": false,
+          "x": 310.0000000003851,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": -1,
+          "tick": 120,
+          "outcome": "Running"
+        }
+      ]
+    },
+    {
+      "scene": "red_wall_left",
+      "method": "current",
+      "seed": 202,
+      "displacement": -29.999999999861984,
+      "trace": [
+        {
+          "steer": -0.2652630794140696,
+          "jump": false,
+          "x": 336.1428218813874,
+          "y": 272.0,
+          "vx": -46.68630197687625,
+          "facing": -1,
+          "tick": 10,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.5224210016191453,
+          "jump": false,
+          "x": 327.7026040252141,
+          "y": 272.0,
+          "vx": -91.94609628496957,
+          "facing": -1,
+          "tick": 20,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.6895736510524444,
+          "jump": false,
+          "x": 315.8376850926961,
+          "y": 272.0,
+          "vx": -121.36496258523022,
+          "facing": -1,
+          "tick": 30,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.7982228731840888,
+          "jump": false,
+          "x": 310.000000000138,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": -1,
+          "tick": 40,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.8688448675696577,
+          "jump": false,
+          "x": 310.000000000138,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": -1,
+          "tick": 50,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.9147491639202775,
+          "jump": false,
+          "x": 310.000000000138,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": -1,
+          "tick": 60,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.9445869565481804,
+          "jump": false,
+          "x": 310.000000000138,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": -1,
+          "tick": 70,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.9639815217563172,
+          "jump": false,
+          "x": 310.000000000138,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": -1,
+          "tick": 80,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.9765879891416062,
+          "jump": false,
+          "x": 310.000000000138,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": -1,
+          "tick": 90,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.984782192942044,
+          "jump": false,
+          "x": 310.000000000138,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": -1,
+          "tick": 100,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.9901084254123287,
+          "jump": false,
+          "x": 310.000000000138,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": -1,
+          "tick": 110,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.9935704765180137,
+          "jump": false,
+          "x": 310.000000000138,
+          "y": 272.0,
+          "vx": 0.0,
+          "facing": -1,
+          "tick": 120,
+          "outcome": "Running"
+        }
+      ]
+    },
+    {
+      "scene": "red_wall_left",
+      "method": "candidate",
+      "seed": 101,
+      "displacement": 147.75199999999973,
+      "trace": [
+        {
+          "steer": 0.85,
+          "yellow": 5.6121149100363255e-05,
+          "red": 0.0031504465732723475,
+          "mode": "escape",
+          "heading": 1,
+          "x": 345.808,
+          "y": 272.0,
+          "vx": 105.60000000000001,
+          "facing": 1,
+          "tick": 10,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.85,
+          "yellow": 0.00011870215530507267,
+          "red": 0.002593089360743761,
+          "mode": "escape",
+          "heading": 1,
+          "x": 360.0639999999999,
+          "y": 272.0,
+          "vx": 149.6,
+          "facing": 1,
+          "tick": 20,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.85,
+          "yellow": 4.0580795030109584e-05,
+          "red": 0.000772888888604939,
+          "mode": "escape",
+          "heading": 1,
+          "x": 375.0239999999997,
+          "y": 272.0,
+          "vx": 149.6,
+          "facing": 1,
+          "tick": 30,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.85,
+          "yellow": 1.582530967425555e-05,
+          "red": 0.0001995861530303955,
+          "mode": "escape",
+          "heading": 1,
+          "x": 389.9839999999995,
+          "y": 272.0,
+          "vx": 149.6,
+          "facing": 1,
+          "tick": 40,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.85,
+          "yellow": 1.4527628081850708e-05,
+          "red": 5.659385351464152e-05,
+          "mode": "escape",
+          "heading": 1,
+          "x": 404.94399999999933,
+          "y": 272.0,
+          "vx": 149.6,
+          "facing": 1,
+          "tick": 50,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.85,
+          "yellow": 9.76983574219048e-06,
+          "red": 2.1391490008682013e-05,
+          "mode": "escape",
+          "heading": 1,
+          "x": 419.90399999999914,
+          "y": 272.0,
+          "vx": 149.6,
+          "facing": 1,
+          "tick": 60,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.85,
+          "yellow": 1.1648269719444215e-05,
+          "red": 1.082669768948108e-05,
+          "mode": "escape",
+          "heading": 1,
+          "x": 434.86399999999895,
+          "y": 272.0,
+          "vx": 149.6,
+          "facing": 1,
+          "tick": 70,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.85,
+          "yellow": 4.2364554246887565e-06,
+          "red": 6.833870429545641e-06,
+          "mode": "escape",
+          "heading": 1,
+          "x": 449.82399999999876,
+          "y": 272.0,
+          "vx": 149.6,
+          "facing": 1,
+          "tick": 80,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.52,
+          "yellow": 8.05423769634217e-06,
+          "red": 3.9532314985990524e-06,
+          "mode": "search",
+          "heading": 1,
+          "x": 460.2959999999989,
+          "y": 272.0,
+          "vx": 91.52000000000001,
+          "facing": 1,
+          "tick": 90,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.52,
+          "yellow": 8.319329936057329e-07,
+          "red": 4.192595952190459e-06,
+          "mode": "search",
+          "heading": 1,
+          "x": 469.4479999999992,
+          "y": 272.0,
+          "vx": 91.52000000000001,
+          "facing": 1,
+          "tick": 100,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.52,
+          "yellow": 3.2609968911856413e-06,
+          "red": 4.382483894005418e-06,
+          "mode": "search",
+          "heading": 1,
+          "x": 478.59999999999945,
+          "y": 272.0,
+          "vx": 91.52000000000001,
+          "facing": 1,
+          "tick": 110,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.52,
+          "yellow": 2.5579938665032387e-06,
+          "red": 8.151153451763093e-06,
+          "mode": "search",
+          "heading": 1,
+          "x": 487.7519999999997,
+          "y": 272.0,
+          "vx": 91.52000000000001,
+          "facing": 1,
+          "tick": 120,
+          "outcome": "Running"
+        }
+      ]
+    },
+    {
+      "scene": "red_wall_left",
+      "method": "candidate",
+      "seed": 202,
+      "displacement": 147.75199999999973,
+      "trace": [
+        {
+          "steer": 0.85,
+          "yellow": 5.5120326578617096e-05,
+          "red": 0.003148771822452545,
+          "mode": "escape",
+          "heading": 1,
+          "x": 345.808,
+          "y": 272.0,
+          "vx": 105.60000000000001,
+          "facing": 1,
+          "tick": 10,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.85,
+          "yellow": 0.00012276810593903065,
+          "red": 0.002596805104985833,
+          "mode": "escape",
+          "heading": 1,
+          "x": 360.0639999999999,
+          "y": 272.0,
+          "vx": 149.6,
+          "facing": 1,
+          "tick": 20,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.85,
+          "yellow": 4.132201138418168e-05,
+          "red": 0.0007701067952439189,
+          "mode": "escape",
+          "heading": 1,
+          "x": 375.0239999999997,
+          "y": 272.0,
+          "vx": 149.6,
+          "facing": 1,
+          "tick": 30,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.85,
+          "yellow": 1.1267024092376232e-05,
+          "red": 0.00019978222553618252,
+          "mode": "escape",
+          "heading": 1,
+          "x": 389.9839999999995,
+          "y": 272.0,
+          "vx": 149.6,
+          "facing": 1,
+          "tick": 40,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.85,
+          "yellow": 1.180985418614e-05,
+          "red": 5.1867798902094364e-05,
+          "mode": "escape",
+          "heading": 1,
+          "x": 404.94399999999933,
+          "y": 272.0,
+          "vx": 149.6,
+          "facing": 1,
+          "tick": 50,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.85,
+          "yellow": 8.388160495087504e-06,
+          "red": 1.8146965885534883e-05,
+          "mode": "escape",
+          "heading": 1,
+          "x": 419.90399999999914,
+          "y": 272.0,
+          "vx": 149.6,
+          "facing": 1,
+          "tick": 60,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.85,
+          "yellow": 7.444468792527914e-06,
+          "red": 1.2392963981255889e-05,
+          "mode": "escape",
+          "heading": 1,
+          "x": 434.86399999999895,
+          "y": 272.0,
+          "vx": 149.6,
+          "facing": 1,
+          "tick": 70,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.85,
+          "yellow": 2.5337212719023228e-06,
+          "red": 6.922884494997561e-06,
+          "mode": "escape",
+          "heading": 1,
+          "x": 449.82399999999876,
+          "y": 272.0,
+          "vx": 149.6,
+          "facing": 1,
+          "tick": 80,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.52,
+          "yellow": 9.216819307766855e-06,
+          "red": 2.8444919735193253e-06,
+          "mode": "search",
+          "heading": 1,
+          "x": 460.2959999999989,
+          "y": 272.0,
+          "vx": 91.52000000000001,
+          "facing": 1,
+          "tick": 90,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.52,
+          "yellow": 6.880218279547989e-06,
+          "red": 2.4788023438304663e-06,
+          "mode": "search",
+          "heading": 1,
+          "x": 469.4479999999992,
+          "y": 272.0,
+          "vx": 91.52000000000001,
+          "facing": 1,
+          "tick": 100,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.52,
+          "yellow": 2.3605680325999856e-06,
+          "red": 3.7889258237555623e-06,
+          "mode": "search",
+          "heading": 1,
+          "x": 478.59999999999945,
+          "y": 272.0,
+          "vx": 91.52000000000001,
+          "facing": 1,
+          "tick": 110,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.52,
+          "yellow": 1.3761746231466532e-06,
+          "red": 5.316949682310224e-06,
+          "mode": "search",
+          "heading": 1,
+          "x": 487.7519999999997,
+          "y": 272.0,
+          "vx": 91.52000000000001,
+          "facing": 1,
+          "tick": 120,
+          "outcome": "Running"
+        }
+      ]
+    },
+    {
+      "scene": "yellow_floor_right",
+      "method": "current",
+      "seed": 101,
+      "displacement": 157.39194214679304,
+      "trace": [
+        {
+          "steer": 0.35,
+          "jump": false,
+          "x": 344.66399999999993,
+          "y": 272.0,
+          "vx": 61.599999999999994,
+          "facing": 1,
+          "tick": 10,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.5774999999999999,
+          "jump": false,
+          "x": 354.2603999999998,
+          "y": 272.0,
+          "vx": 101.63999999999999,
+          "facing": 1,
+          "tick": 20,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.7253749999999999,
+          "jump": false,
+          "x": 366.8232799999997,
+          "y": 272.0,
+          "vx": 127.66599999999998,
+          "facing": 1,
+          "tick": 30,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.8214937499999999,
+          "jump": false,
+          "x": 381.21800099999973,
+          "y": 272.0,
+          "vx": 144.5829,
+          "facing": 1,
+          "tick": 40,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.8839709374999999,
+          "jump": false,
+          "x": 396.7715296499997,
+          "y": 272.0,
+          "vx": 155.57888499999999,
+          "facing": 1,
+          "tick": 50,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.9245811093749999,
+          "jump": false,
+          "x": 413.04415717499944,
+          "y": 272.0,
+          "vx": 162.72627525000001,
+          "facing": 1,
+          "tick": 60,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.95097772109375,
+          "jump": false,
+          "x": 429.7813650662496,
+          "y": 272.0,
+          "vx": 167.3720789125,
+          "facing": 1,
+          "tick": 70,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.9586338443400229,
+          "jump": false,
+          "x": 446.653320726634,
+          "y": 272.0,
+          "vx": 168.719556603844,
+          "facing": 1,
+          "tick": 80,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.8505649332891054,
+          "jump": false,
+          "x": 461.70786483597203,
+          "y": 272.0,
+          "vx": 149.69942825888256,
+          "facing": 1,
+          "tick": 90,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.7423899872136335,
+          "jump": false,
+          "x": 474.8587165160248,
+          "y": 272.0,
+          "vx": 130.6606377495995,
+          "facing": 1,
+          "tick": 100,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.6645534916888618,
+          "jump": false,
+          "x": 486.5862502018725,
+          "y": 272.0,
+          "vx": 116.96141453723968,
+          "facing": 1,
+          "tick": 110,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.6139597695977601,
+          "jump": false,
+          "x": 497.39194214679304,
+          "y": 272.0,
+          "vx": 108.05691944920578,
+          "facing": 1,
+          "tick": 120,
+          "outcome": "Running"
+        }
+      ]
+    },
+    {
+      "scene": "yellow_floor_right",
+      "method": "current",
+      "seed": 202,
+      "displacement": 157.38403619230377,
+      "trace": [
+        {
+          "steer": 0.35,
+          "jump": false,
+          "x": 344.66399999999993,
+          "y": 272.0,
+          "vx": 61.599999999999994,
+          "facing": 1,
+          "tick": 10,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.5774999999999999,
+          "jump": false,
+          "x": 354.2603999999998,
+          "y": 272.0,
+          "vx": 101.63999999999999,
+          "facing": 1,
+          "tick": 20,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.7253749999999999,
+          "jump": false,
+          "x": 366.8232799999997,
+          "y": 272.0,
+          "vx": 127.66599999999998,
+          "facing": 1,
+          "tick": 30,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.8214937499999999,
+          "jump": false,
+          "x": 381.21800099999973,
+          "y": 272.0,
+          "vx": 144.5829,
+          "facing": 1,
+          "tick": 40,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.8839709374999999,
+          "jump": false,
+          "x": 396.7715296499997,
+          "y": 272.0,
+          "vx": 155.57888499999999,
+          "facing": 1,
+          "tick": 50,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.9245811093749999,
+          "jump": false,
+          "x": 413.04415717499944,
+          "y": 272.0,
+          "vx": 162.72627525000001,
+          "facing": 1,
+          "tick": 60,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.95097772109375,
+          "jump": false,
+          "x": 429.7813650662496,
+          "y": 272.0,
+          "vx": 167.3720789125,
+          "facing": 1,
+          "tick": 70,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.9602776508031303,
+          "jump": false,
+          "x": 446.68225172038456,
+          "y": 272.0,
+          "vx": 169.00886654135095,
+          "facing": 1,
+          "tick": 80,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.8502867814039647,
+          "jump": false,
+          "x": 461.7352830032371,
+          "y": 272.0,
+          "vx": 149.6504735270978,
+          "facing": 1,
+          "tick": 90,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.7414040658268877,
+          "jump": false,
+          "x": 474.870028141206,
+          "y": 272.0,
+          "vx": 130.48711558553222,
+          "facing": 1,
+          "tick": 100,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.663912642787477,
+          "jump": false,
+          "x": 486.5856755588151,
+          "y": 272.0,
+          "vx": 116.84862513059595,
+          "facing": 1,
+          "tick": 110,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.61354321781186,
+          "jump": false,
+          "x": 497.38403619230377,
+          "y": 272.0,
+          "vx": 107.98360633488737,
+          "facing": 1,
+          "tick": 120,
+          "outcome": "Running"
+        }
+      ]
+    },
+    {
+      "scene": "yellow_floor_right",
+      "method": "candidate",
+      "seed": 101,
+      "displacement": 141.19042663421772,
+      "trace": [
+        {
+          "steer": 0.830081582069397,
+          "yellow": 0.011405539698898792,
+          "red": 0.0001973781327251345,
+          "mode": "approach",
+          "heading": 1,
+          "x": 345.808,
+          "y": 272.0,
+          "vx": 105.60000000000001,
+          "facing": 1,
+          "tick": 10,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.8916948437690735,
+          "yellow": 0.02144952490925789,
+          "red": 0.0006293370388448238,
+          "mode": "approach",
+          "heading": 1,
+          "x": 360.50429755020133,
+          "y": 272.0,
+          "vx": 156.93829250335693,
+          "facing": 1,
+          "tick": 20,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.9027042388916016,
+          "yellow": 0.024583837017416954,
+          "red": 0.000822116737253964,
+          "mode": "approach",
+          "heading": 1,
+          "x": 376.3918921546937,
+          "y": 272.0,
+          "vx": 158.87594604492188,
+          "facing": 1,
+          "tick": 30,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.9036949872970581,
+          "yellow": 0.024901030585169792,
+          "red": 0.0008763066725805402,
+          "mode": "approach",
+          "heading": 1,
+          "x": 392.29692393112174,
+          "y": 272.0,
+          "vx": 159.0503177642822,
+          "facing": 1,
+          "tick": 40,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.8954324722290039,
+          "yellow": 0.022439604625105858,
+          "red": 0.0008411542512476444,
+          "mode": "approach",
+          "heading": 1,
+          "x": 408.0565354423524,
+          "y": 272.0,
+          "vx": 157.5961151123047,
+          "facing": 1,
+          "tick": 50,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.8323334455490112,
+          "yellow": 0.01164266001433134,
+          "red": 0.0005677334265783429,
+          "mode": "approach",
+          "heading": 1,
+          "x": 422.71105837097184,
+          "y": 272.0,
+          "vx": 146.49068641662598,
+          "facing": 1,
+          "tick": 60,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.6962246894836426,
+          "yellow": 0.003625721437856555,
+          "red": 0.00018698585336096585,
+          "mode": "approach",
+          "heading": 1,
+          "x": 435.126915727234,
+          "y": 272.0,
+          "vx": 122.5355453491211,
+          "facing": 1,
+          "tick": 70,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.52,
+          "yellow": 0.0010790638625621796,
+          "red": 3.656467015389353e-05,
+          "mode": "search",
+          "heading": 1,
+          "x": 444.58242663421663,
+          "y": 272.0,
+          "vx": 91.52000000000001,
+          "facing": 1,
+          "tick": 80,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.52,
+          "yellow": 0.00037953100400045514,
+          "red": 3.06213041767478e-06,
+          "mode": "search",
+          "heading": 1,
+          "x": 453.7344266342169,
+          "y": 272.0,
+          "vx": 91.52000000000001,
+          "facing": 1,
+          "tick": 90,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.52,
+          "yellow": 0.00016166642308235168,
+          "red": 6.60773366689682e-07,
+          "mode": "search",
+          "heading": 1,
+          "x": 462.8864266342172,
+          "y": 272.0,
+          "vx": 91.52000000000001,
+          "facing": 1,
+          "tick": 100,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.52,
+          "yellow": 8.725735824555159e-05,
+          "red": 1.5725818229839206e-06,
+          "mode": "search",
+          "heading": 1,
+          "x": 472.03842663421744,
+          "y": 272.0,
+          "vx": 91.52000000000001,
+          "facing": 1,
+          "tick": 110,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.52,
+          "yellow": 5.21445763297379e-05,
+          "red": 6.204820238053799e-06,
+          "mode": "search",
+          "heading": 1,
+          "x": 481.1904266342177,
+          "y": 272.0,
+          "vx": 91.52000000000001,
+          "facing": 1,
+          "tick": 120,
+          "outcome": "Running"
+        }
+      ]
+    },
+    {
+      "scene": "yellow_floor_right",
+      "method": "candidate",
+      "seed": 202,
+      "displacement": 141.1863769134535,
+      "trace": [
+        {
+          "steer": 0.8300693035125732,
+          "yellow": 0.01140426192432642,
+          "red": 0.00019782318850047886,
+          "mode": "approach",
+          "heading": 1,
+          "x": 345.808,
+          "y": 272.0,
+          "vx": 105.60000000000001,
+          "facing": 1,
+          "tick": 10,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.8916937112808228,
+          "yellow": 0.021449226886034012,
+          "red": 0.0006350503535941243,
+          "mode": "approach",
+          "heading": 1,
+          "x": 360.50428559112555,
+          "y": 272.0,
+          "vx": 156.9380931854248,
+          "facing": 1,
+          "tick": 20,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.9026967287063599,
+          "yellow": 0.024581437930464745,
+          "red": 0.0008268933743238449,
+          "mode": "approach",
+          "heading": 1,
+          "x": 376.39174801635755,
+          "y": 272.0,
+          "vx": 158.87462425231936,
+          "facing": 1,
+          "tick": 30,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.9036681652069092,
+          "yellow": 0.024892374873161316,
+          "red": 0.0008751291316002607,
+          "mode": "approach",
+          "heading": 1,
+          "x": 392.29630772399895,
+          "y": 272.0,
+          "vx": 159.04559707641602,
+          "facing": 1,
+          "tick": 40,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.8954426646232605,
+          "yellow": 0.022442396730184555,
+          "red": 0.0008359387284144759,
+          "mode": "approach",
+          "heading": 1,
+          "x": 408.05609862136856,
+          "y": 272.0,
+          "vx": 157.59790897369385,
+          "facing": 1,
+          "tick": 50,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.832334578037262,
+          "yellow": 0.011642778292298317,
+          "red": 0.0005694467108696699,
+          "mode": "approach",
+          "heading": 1,
+          "x": 422.71065742721555,
+          "y": 272.0,
+          "vx": 146.4908857345581,
+          "facing": 1,
+          "tick": 60,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.6960171461105347,
+          "yellow": 0.003618977963924408,
+          "red": 0.00018853889196179807,
+          "mode": "approach",
+          "heading": 1,
+          "x": 435.12359655914315,
+          "y": 272.0,
+          "vx": 122.4990177154541,
+          "facing": 1,
+          "tick": 70,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.52,
+          "yellow": 0.0010763835161924362,
+          "red": 3.7932011764496565e-05,
+          "mode": "search",
+          "heading": 1,
+          "x": 444.5783769134524,
+          "y": 272.0,
+          "vx": 91.52000000000001,
+          "facing": 1,
+          "tick": 80,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.52,
+          "yellow": 0.00037996494211256504,
+          "red": 3.0633382266387343e-06,
+          "mode": "search",
+          "heading": 1,
+          "x": 453.7303769134527,
+          "y": 272.0,
+          "vx": 91.52000000000001,
+          "facing": 1,
+          "tick": 90,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.52,
+          "yellow": 0.00016702862922102213,
+          "red": 0.0,
+          "mode": "search",
+          "heading": 1,
+          "x": 462.88237691345296,
+          "y": 272.0,
+          "vx": 91.52000000000001,
+          "facing": 1,
+          "tick": 100,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.52,
+          "yellow": 8.621095912531018e-05,
+          "red": 1.2970122043043375e-06,
+          "mode": "search",
+          "heading": 1,
+          "x": 472.03437691345323,
+          "y": 272.0,
+          "vx": 91.52000000000001,
+          "facing": 1,
+          "tick": 110,
+          "outcome": "Running"
+        },
+        {
+          "steer": 0.52,
+          "yellow": 5.0561095122247934e-05,
+          "red": 3.5962730180472136e-06,
+          "mode": "search",
+          "heading": 1,
+          "x": 481.1863769134535,
+          "y": 272.0,
+          "vx": 91.52000000000001,
+          "facing": 1,
+          "tick": 120,
+          "outcome": "Running"
+        }
+      ]
+    },
+    {
+      "scene": "yellow_floor_left",
+      "method": "current",
+      "seed": 101,
+      "displacement": -156.94044437677013,
+      "trace": [
+        {
+          "steer": -0.35,
+          "jump": false,
+          "x": 335.33600000000007,
+          "y": 272.0,
+          "vx": -61.599999999999994,
+          "facing": -1,
+          "tick": 10,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.5774999999999999,
+          "jump": false,
+          "x": 325.7396000000002,
+          "y": 272.0,
+          "vx": -101.63999999999999,
+          "facing": -1,
+          "tick": 20,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.7253749999999999,
+          "jump": false,
+          "x": 313.1767200000003,
+          "y": 272.0,
+          "vx": -127.66599999999998,
+          "facing": -1,
+          "tick": 30,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.8214937499999999,
+          "jump": false,
+          "x": 298.78199900000027,
+          "y": 272.0,
+          "vx": -144.5829,
+          "facing": -1,
+          "tick": 40,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.8839709374999999,
+          "jump": false,
+          "x": 283.2284703500003,
+          "y": 268.0,
+          "vx": -155.57888499999999,
+          "facing": -1,
+          "tick": 50,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.9245811093749999,
+          "jump": false,
+          "x": 266.95584282500056,
+          "y": 268.0,
+          "vx": -162.72627525000001,
+          "facing": -1,
+          "tick": 60,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.95097772109375,
+          "jump": false,
+          "x": 250.21863493375042,
+          "y": 268.0,
+          "vx": -167.3720789125,
+          "facing": -1,
+          "tick": 70,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.9502560273462797,
+          "jump": false,
+          "x": 233.4941288524559,
+          "y": 268.0,
+          "vx": -167.2450608129452,
+          "facing": -1,
+          "tick": 80,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.8433971802241005,
+          "jump": false,
+          "x": 218.5678669095766,
+          "y": 268.0,
+          "vx": -148.4379037194417,
+          "facing": -1,
+          "tick": 90,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.7377723380831103,
+          "jump": false,
+          "x": 205.50277403714574,
+          "y": 268.0,
+          "vx": -129.8479315026274,
+          "facing": -1,
+          "tick": 100,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.6615520197540217,
+          "jump": false,
+          "x": 193.83091072921582,
+          "y": 268.0,
+          "vx": -116.43315547670781,
+          "facing": -1,
+          "tick": 110,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.6120088128401141,
+          "jump": false,
+          "x": 183.05955562322987,
+          "y": 268.0,
+          "vx": -107.71355105986008,
+          "facing": -1,
+          "tick": 120,
+          "outcome": "Running"
+        }
+      ]
+    },
+    {
+      "scene": "yellow_floor_left",
+      "method": "current",
+      "seed": 202,
+      "displacement": -156.93347453434632,
+      "trace": [
+        {
+          "steer": -0.35,
+          "jump": false,
+          "x": 335.33600000000007,
+          "y": 272.0,
+          "vx": -61.599999999999994,
+          "facing": -1,
+          "tick": 10,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.5774999999999999,
+          "jump": false,
+          "x": 325.7396000000002,
+          "y": 272.0,
+          "vx": -101.63999999999999,
+          "facing": -1,
+          "tick": 20,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.7253749999999999,
+          "jump": false,
+          "x": 313.1767200000003,
+          "y": 272.0,
+          "vx": -127.66599999999998,
+          "facing": -1,
+          "tick": 30,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.8214937499999999,
+          "jump": false,
+          "x": 298.78199900000027,
+          "y": 272.0,
+          "vx": -144.5829,
+          "facing": -1,
+          "tick": 40,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.8839709374999999,
+          "jump": false,
+          "x": 283.2284703500003,
+          "y": 268.0,
+          "vx": -155.57888499999999,
+          "facing": -1,
+          "tick": 50,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.9245811093749999,
+          "jump": false,
+          "x": 266.95584282500056,
+          "y": 268.0,
+          "vx": -162.72627525000001,
+          "facing": -1,
+          "tick": 60,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.95097772109375,
+          "jump": false,
+          "x": 250.21863493375042,
+          "y": 268.0,
+          "vx": -167.3720789125,
+          "facing": -1,
+          "tick": 70,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.951926808869269,
+          "jump": false,
+          "x": 233.46472309765124,
+          "y": 268.0,
+          "vx": -167.53911836099132,
+          "facing": -1,
+          "tick": 80,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.8431140755771496,
+          "jump": false,
+          "x": 218.54000495689928,
+          "y": 268.0,
+          "vx": -148.38807730157833,
+          "facing": -1,
+          "tick": 90,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.736800597708303,
+          "jump": false,
+          "x": 205.49080271618405,
+          "y": 268.0,
+          "vx": -129.67690519666132,
+          "facing": -1,
+          "tick": 100,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.6609203885103969,
+          "jump": false,
+          "x": 193.83065471021263,
+          "y": 268.0,
+          "vx": -116.32198837782985,
+          "facing": -1,
+          "tick": 110,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.611598252531758,
+          "jump": false,
+          "x": 183.06652546565368,
+          "y": 268.0,
+          "vx": -107.64129244558941,
+          "facing": -1,
+          "tick": 120,
+          "outcome": "Running"
+        }
+      ]
+    },
+    {
+      "scene": "yellow_floor_left",
+      "method": "candidate",
+      "seed": 101,
+      "displacement": -141.0681530555731,
+      "trace": [
+        {
+          "steer": -0.8319577574729919,
+          "yellow": 0.011602655053138733,
+          "red": 0.00020444230176508427,
+          "mode": "approach",
+          "heading": -1,
+          "x": 334.192,
+          "y": 272.0,
+          "vx": -105.60000000000001,
+          "facing": -1,
+          "tick": 10,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.8929992914199829,
+          "yellow": 0.02178720198571682,
+          "red": 0.0006469826912507415,
+          "mode": "approach",
+          "heading": -1,
+          "x": 319.48192748260493,
+          "y": 272.0,
+          "vx": -157.167875289917,
+          "facing": -1,
+          "tick": 20,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.9035843014717102,
+          "yellow": 0.024865269660949707,
+          "red": 0.0008291909471154213,
+          "mode": "approach",
+          "heading": -1,
+          "x": 303.57884377670285,
+          "y": 272.0,
+          "vx": -159.030837059021,
+          "facing": -1,
+          "tick": 30,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.9032317399978638,
+          "yellow": 0.024751923978328705,
+          "red": 0.0008559533162042499,
+          "mode": "approach",
+          "heading": -1,
+          "x": 287.68196515274025,
+          "y": 268.0,
+          "vx": -158.96878623962402,
+          "facing": -1,
+          "tick": 40,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.8933604955673218,
+          "yellow": 0.02188216894865036,
+          "red": 0.0008088033646345139,
+          "mode": "approach",
+          "heading": -1,
+          "x": 271.9588204307551,
+          "y": 268.0,
+          "vx": -157.23144721984863,
+          "facing": -1,
+          "tick": 50,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.8290842771530151,
+          "yellow": 0.011302515864372253,
+          "red": 0.0005457426887005568,
+          "mode": "approach",
+          "heading": -1,
+          "x": 257.35941100845275,
+          "y": 268.0,
+          "vx": -145.91883277893066,
+          "facing": -1,
+          "tick": 60,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.6939311027526855,
+          "yellow": 0.003551715752109885,
+          "red": 0.00018132422701455653,
+          "mode": "approach",
+          "heading": -1,
+          "x": 244.98728442611628,
+          "y": 268.0,
+          "vx": -122.13187408447266,
+          "facing": -1,
+          "tick": 70,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.52,
+          "yellow": 0.0010789651423692703,
+          "red": 3.68503388017416e-05,
+          "mode": "search",
+          "heading": -1,
+          "x": 235.53984694442684,
+          "y": 268.0,
+          "vx": -91.52000000000001,
+          "facing": -1,
+          "tick": 80,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.52,
+          "yellow": 0.0003902903408743441,
+          "red": 4.081841325387359e-06,
+          "mode": "search",
+          "heading": -1,
+          "x": 226.38784694442685,
+          "y": 268.0,
+          "vx": -91.52000000000001,
+          "facing": -1,
+          "tick": 90,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.52,
+          "yellow": 0.0001705473114270717,
+          "red": 1.10274413600564e-06,
+          "mode": "search",
+          "heading": -1,
+          "x": 217.23584694442687,
+          "y": 268.0,
+          "vx": -91.52000000000001,
+          "facing": -1,
+          "tick": 100,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.52,
+          "yellow": 9.303950355388224e-05,
+          "red": 1.7687707440927625e-06,
+          "mode": "search",
+          "heading": -1,
+          "x": 208.08384694442688,
+          "y": 268.0,
+          "vx": -91.52000000000001,
+          "facing": -1,
+          "tick": 110,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.52,
+          "yellow": 5.5812299251556396e-05,
+          "red": 6.2232575146481395e-06,
+          "mode": "search",
+          "heading": -1,
+          "x": 198.9318469444269,
+          "y": 268.0,
+          "vx": -91.52000000000001,
+          "facing": -1,
+          "tick": 120,
+          "outcome": "Running"
+        }
+      ]
+    },
+    {
+      "scene": "yellow_floor_left",
+      "method": "candidate",
+      "seed": 202,
+      "displacement": -141.06380037155188,
+      "trace": [
+        {
+          "steer": -0.8319421410560608,
+          "yellow": 0.011600998230278492,
+          "red": 0.0002043004205916077,
+          "mode": "approach",
+          "heading": -1,
+          "x": 334.192,
+          "y": 272.0,
+          "vx": -105.60000000000001,
+          "facing": -1,
+          "tick": 10,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.8929997682571411,
+          "yellow": 0.021787336096167564,
+          "red": 0.0006517976289615035,
+          "mode": "approach",
+          "heading": -1,
+          "x": 319.48192244720457,
+          "y": 272.0,
+          "vx": -157.16795921325684,
+          "facing": -1,
+          "tick": 20,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.9035806655883789,
+          "yellow": 0.02486410178244114,
+          "red": 0.0008344235830008984,
+          "mode": "approach",
+          "heading": -1,
+          "x": 303.5789027328489,
+          "y": 272.0,
+          "vx": -159.03019714355466,
+          "facing": -1,
+          "tick": 30,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.9032027721405029,
+          "yellow": 0.024742627516388893,
+          "red": 0.0008560147834941745,
+          "mode": "approach",
+          "heading": -1,
+          "x": 287.6825339431762,
+          "y": 268.0,
+          "vx": -158.9636878967285,
+          "facing": -1,
+          "tick": 40,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.8933678865432739,
+          "yellow": 0.02188412845134735,
+          "red": 0.0008037035586312413,
+          "mode": "approach",
+          "heading": -1,
+          "x": 271.95925914001447,
+          "y": 268.0,
+          "vx": -157.2327480316162,
+          "facing": -1,
+          "tick": 50,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.8290828466415405,
+          "yellow": 0.011302368715405464,
+          "red": 0.000547263422049582,
+          "mode": "approach",
+          "heading": -1,
+          "x": 257.3598593688961,
+          "y": 268.0,
+          "vx": -145.91858100891113,
+          "facing": -1,
+          "tick": 60,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.6937095522880554,
+          "yellow": 0.0035446248948574066,
+          "red": 0.0001834107970353216,
+          "mode": "approach",
+          "heading": -1,
+          "x": 244.990857252502,
+          "y": 268.0,
+          "vx": -122.09288120269775,
+          "facing": -1,
+          "tick": 70,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.52,
+          "yellow": 0.001075930893421173,
+          "red": 3.83910519303754e-05,
+          "mode": "search",
+          "heading": -1,
+          "x": 235.54419962844807,
+          "y": 268.0,
+          "vx": -91.52000000000001,
+          "facing": -1,
+          "tick": 80,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.52,
+          "yellow": 0.0003902604221366346,
+          "red": 4.0771556086838245e-06,
+          "mode": "search",
+          "heading": -1,
+          "x": 226.39219962844808,
+          "y": 268.0,
+          "vx": -91.52000000000001,
+          "facing": -1,
+          "tick": 90,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.52,
+          "yellow": 0.00017541227862238884,
+          "red": 1.676526153460145e-07,
+          "mode": "search",
+          "heading": -1,
+          "x": 217.2401996284481,
+          "y": 268.0,
+          "vx": -91.52000000000001,
+          "facing": -1,
+          "tick": 100,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.52,
+          "yellow": 9.221144136972725e-05,
+          "red": 1.4893303159624338e-06,
+          "mode": "search",
+          "heading": -1,
+          "x": 208.0881996284481,
+          "y": 268.0,
+          "vx": -91.52000000000001,
+          "facing": -1,
+          "tick": 110,
+          "outcome": "Running"
+        },
+        {
+          "steer": -0.52,
+          "yellow": 5.41422632522881e-05,
+          "red": 3.647059202194214e-06,
+          "mode": "search",
+          "heading": -1,
+          "x": 198.93619962844812,
+          "y": 268.0,
+          "vx": -91.52000000000001,
+          "facing": -1,
+          "tick": 120,
+          "outcome": "Running"
+        }
+      ]
+    }
+  ],
+  "controls": {
+    "disconnected": {
+      "actions_identical": true,
+      "traces": [
+        [
+          {
+            "steer": 0.52,
+            "yellow": 0.0,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 2.1571031538769603e-06,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 3.2596144592389464e-06,
+            "red": 2.382075763307512e-06,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 6.059490260668099e-06,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 6.102054612711072e-06,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 8.16027750261128e-07,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 2.3913744371384382e-06,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 6.694957846775651e-06,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 6.435249815694988e-06,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 3.7914287531748414e-06,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 1.4357210602611303e-06,
+            "red": 5.704205250367522e-07,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 5.279638571664691e-06,
+            "red": 3.4879049053415656e-06,
+            "mode": "search",
+            "heading": 1
+          }
+        ],
+        [
+          {
+            "steer": 0.52,
+            "yellow": 0.0,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 2.1571031538769603e-06,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 3.2596144592389464e-06,
+            "red": 2.382075763307512e-06,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 6.059490260668099e-06,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 6.102054612711072e-06,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 8.16027750261128e-07,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 2.3913744371384382e-06,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 6.694957846775651e-06,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 6.435249815694988e-06,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 3.7914287531748414e-06,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 1.4357210602611303e-06,
+            "red": 5.704205250367522e-07,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 5.279638571664691e-06,
+            "red": 3.4879049053415656e-06,
+            "mode": "search",
+            "heading": 1
+          }
+        ]
+      ]
+    },
+    "zero_synapses": {
+      "actions_identical": true,
+      "traces": [
+        [
+          {
+            "steer": 0.52,
+            "yellow": 0.0,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 3.6777491914108396e-06,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 5.307127139531076e-06,
+            "red": 5.824433173984289e-06,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 9.212453733198345e-06,
+            "red": 1.4465040294453502e-06,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 8.77276761457324e-06,
+            "red": 1.9676663214340806e-06,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 4.406174411997199e-06,
+            "red": 4.429908585734665e-06,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 5.6005665101110935e-06,
+            "red": 1.3221579138189554e-06,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 1.009773404803127e-05,
+            "red": 1.1500087566673756e-06,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 9.946321370080113e-06,
+            "red": 1.254229573532939e-06,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 7.706985343247652e-06,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 4.997040377929807e-06,
+            "red": 5.414665793068707e-06,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 7.853974238969386e-06,
+            "red": 8.044866262935102e-06,
+            "mode": "search",
+            "heading": 1
+          }
+        ],
+        [
+          {
+            "steer": 0.52,
+            "yellow": 0.0,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 3.6777491914108396e-06,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 5.307127139531076e-06,
+            "red": 5.824433173984289e-06,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 9.212453733198345e-06,
+            "red": 1.4465040294453502e-06,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 8.77276761457324e-06,
+            "red": 1.9676663214340806e-06,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 4.406174411997199e-06,
+            "red": 4.429908585734665e-06,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 5.6005665101110935e-06,
+            "red": 1.3221579138189554e-06,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 1.009773404803127e-05,
+            "red": 1.1500087566673756e-06,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 9.946321370080113e-06,
+            "red": 1.254229573532939e-06,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 7.706985343247652e-06,
+            "red": 0.0,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 4.997040377929807e-06,
+            "red": 5.414665793068707e-06,
+            "mode": "search",
+            "heading": 1
+          },
+          {
+            "steer": 0.52,
+            "yellow": 7.853974238969386e-06,
+            "red": 8.044866262935102e-06,
+            "mode": "search",
+            "heading": 1
+          }
+        ]
+      ]
+    }
+  },
+  "limits": "16 short trials, two held-out RNG seeds, four controlled scene orientations. This is a headless check, not native feel or broad navigation validation."
+}

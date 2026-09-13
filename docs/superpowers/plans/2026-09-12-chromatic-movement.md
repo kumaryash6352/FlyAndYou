@@ -4,7 +4,7 @@ Execute inline, as requested; this workspace has no Git repository.
 
 **Goal:** Implement the approved red-repels/yellow-attracts neural controller and explain its decisions in the existing toolbox.
 
-**Design:** [Approved investigation](/Users/tyush/Documents/Events/HackWesTX27/FlyAndYou/runs/movement-investigation/REPORT.md). Keep the sparse graph, eye-level-v2 RGB renderer, signed-steer action, five neural steps, ten physics ticks, and body constants. Use precomputed chromatic channel populations and a fixed neutral calibration; movement consumes postsynaptic activity only.
+**Design:** [Approved investigation](../../../experiments/movement-investigation/REPORT.md). Keep the sparse graph, eye-level-v2 RGB renderer, signed-steer action, five neural steps, ten physics ticks, and body constants. Use precomputed chromatic channel populations and a fixed neutral calibration; movement consumes postsynaptic activity only.
 
 ## 1. Neural readout and reproducible motor state
 
