@@ -9,12 +9,23 @@ pub const DONE: usize = 17;
 pub struct Tutorial {
     pub beat: usize,
     pub elapsed: f32,
+    intro_started: bool,
     start_pending: bool,
 }
 
 impl Tutorial {
+    pub fn awaiting_start(&self) -> bool {
+        !self.intro_started
+    }
+    pub fn start_intro(&mut self) -> bool {
+        if self.intro_started {
+            return false;
+        }
+        self.intro_started = true;
+        true
+    }
     pub fn advance(&mut self, seconds: f32) {
-        if self.beat >= READY {
+        if self.awaiting_start() || self.beat >= READY {
             return;
         }
         self.elapsed += seconds.max(0.);
@@ -71,6 +82,9 @@ impl Tutorial {
         std::mem::take(&mut self.start_pending)
     }
     pub fn skip(&mut self) {
+        if self.awaiting_start() {
+            return;
+        }
         self.beat = READY;
         self.elapsed = 0.;
         self.start_pending = false;
@@ -108,8 +122,29 @@ mod tests {
     use super::*;
 
     #[test]
+    fn start_screen_holds_the_opening_and_enter_starts_only_once() {
+        let mut intro = Tutorial::default();
+        intro.advance(120.);
+        assert!(intro.awaiting_start());
+        assert_eq!(intro.beat, 0);
+        assert_eq!(intro.elapsed, 0.);
+        assert!(!intro.begin_paint());
+        assert!(!intro.take_start());
+        assert!(intro.start_intro());
+        intro.advance(1.);
+        assert!(!intro.awaiting_start());
+        assert_eq!(intro.beat, 1);
+        let elapsed = intro.elapsed;
+        assert!(!intro.start_intro());
+        assert_eq!(intro.beat, 1);
+        assert_eq!(intro.elapsed, elapsed);
+        assert!(!intro.take_start());
+    }
+
+    #[test]
     fn narration_holds_until_paint_and_hands_off_only_once() {
         let mut intro = Tutorial::default();
+        intro.start_intro();
         assert!(intro.active());
         assert!(!intro.begin_paint());
         assert!(!intro.take_start());
@@ -128,6 +163,7 @@ mod tests {
     #[test]
     fn brain_and_camera_reveal_on_nervous_system_line() {
         let mut intro = Tutorial::default();
+        intro.start_intro();
         intro.advance(14.2);
         assert!(!intro.show_rail());
         intro.advance(0.1);

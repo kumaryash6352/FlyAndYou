@@ -6,6 +6,7 @@ const INK: Color32 = Color32::from_rgb(42, 48, 38);
 const MUTED: Color32 = Color32::from_rgb(116, 123, 104);
 const LINE: Color32 = Color32::from_rgb(213, 215, 197);
 const GREEN: Color32 = Color32::from_rgb(82, 104, 60);
+const OUTSIDE_TERRAIN: Color32 = Color32::from_rgb(119, 127, 110);
 pub fn configure(ctx: &Context) {
     tutorial_view::install_font(ctx);
     let mut style = Style::default();
@@ -90,6 +91,31 @@ impl Desktop {
         self.focused = ctx.input(|i| i.focused);
         if first {
             ctx.input(|i| {
+                if self.tutorial.awaiting_start() {
+                    let enter = i.events.iter().any(|event| {
+                        matches!(
+                            event,
+                            Event::Key {
+                                key: Key::Enter,
+                                pressed: true,
+                                repeat: false,
+                                ..
+                            }
+                        )
+                    });
+                    if enter
+                        && i.focused
+                        && self.sim.phase == Phase::Paused
+                        && self.restore_name.is_none()
+                        && !self.saving
+                    {
+                        self.tutorial.start_intro();
+                    }
+                    if i.key_pressed(Key::R) && self.sim.phase == Phase::Fault {
+                        self.reset(false);
+                    }
+                    return;
+                }
                 if i.key_pressed(Key::Space) {
                     self.toggle_play();
                 }
@@ -285,7 +311,7 @@ impl Desktop {
     }
     fn canvas(&mut self, ui: &mut Ui, ctx: &Context, area: Rect, response: Response, first: bool) {
         let painter = ui.painter().with_clip_rect(area);
-        painter.rect_filled(area, 0, Color32::from_rgb(235, 234, 218));
+        painter.rect_filled(area, 0, OUTSIDE_TERRAIN);
         let fit = (area.width() / 640.).min(area.height() / 360.);
         let cover = (area.width() / 640.).max(area.height() / 360.);
         let scale = if self.zoom < 1. {
@@ -309,6 +335,22 @@ impl Desktop {
         } else {
             (rect, scale)
         };
+        // Extend the spectator scenery beyond the map. Anchor its hatching
+        // to world coordinates so it stays still during pans and zooms.
+        let spacing = 17. * scale;
+        let origin = rect.left() + 2. * rect.top();
+        let first_line = ((area.left() + 2. * area.top() - origin) / spacing).floor() as i32;
+        let last_line = ((area.right() + 2. * area.bottom() - origin) / spacing).ceil() as i32;
+        for line in first_line..=last_line {
+            let intercept = origin + line as f32 * spacing;
+            painter.line_segment(
+                [
+                    pos2(intercept - 2. * area.top(), area.top()),
+                    pos2(intercept - 2. * area.bottom(), area.bottom()),
+                ],
+                Stroke::new(scale * 0.7, Color32::from_rgb(111, 119, 103)),
+            );
+        }
         let world_texture = if self.tutorial.beat < 4 {
             self.intro_terrain_texture.as_ref()
         } else {
@@ -416,7 +458,7 @@ impl Desktop {
         }
         if !first {
             if self.tutorial.active() {
-                tutorial_view::narration(ui, area, rect, &self.tutorial);
+                self.intro_text(ui, area, rect);
             }
             return;
         }
@@ -490,7 +532,32 @@ impl Desktop {
             }
         }
         if self.tutorial.active() {
-            tutorial_view::narration(ui, area, rect, &self.tutorial);
+            self.intro_text(ui, area, rect);
+        }
+    }
+    fn intro_text(&self, ui: &mut Ui, area: Rect, map: Rect) {
+        if self.tutorial.awaiting_start() {
+            let ready =
+                self.sim.phase == Phase::Paused && self.restore_name.is_none() && !self.saving;
+            let text = if ready {
+                "Press Enter to Start"
+            } else if self.sim.phase == Phase::Fault {
+                "Fly needs a restart"
+            } else {
+                "Getting Fly ready..."
+            };
+            tutorial_view::lettering(
+                ui,
+                Rect::from_center_size(
+                    area.center() - vec2(0., 95.),
+                    vec2((area.width() - 60.).min(760.), 70.),
+                ),
+                text,
+                36.,
+                INK,
+            );
+        } else {
+            tutorial_view::narration(ui, area, map, &self.tutorial);
         }
     }
     fn append_stroke_point(&mut self, pos: Pos2, rect: Rect, scale: f32, force: bool) {
