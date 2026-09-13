@@ -1,0 +1,252 @@
+{
+  "date": "2026-09-13",
+  "machine": "Apple M3 Pro, 5 performance cores + 6 efficiency cores, 18 GiB RAM, macOS 26.0.1",
+  "git_baseline": "06f126e",
+  "candle_version": "0.11.0",
+  "note": "Sequential isolated compute processes; existing native game and worker left running; no system-load isolation or native GPU integration measured. Raw fixtures and state arrays stay under ignored runs/candle-evaluation.",
+  "python": {
+    "kind": "isolated feasibility measurement",
+    "python": "3.12.11 (main, Jun  3 2025, 15:41:47) [Clang 17.0.0 (clang-1700.0.13.3)]",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "platform": "macOS-26.0.1-arm64-arm-64bit",
+    "nodes": 164606,
+    "edges": 25558671,
+    "csr_bytes": 205127796,
+    "dense_f32_bytes": 108380540944,
+    "load_ms": 1174.15991704911,
+    "brain_step_image": {
+      "n": 60,
+      "median_ms": 115.11664552381262,
+      "p95_ms": 128.6836017563473,
+      "min_ms": 114.05037494841963,
+      "max_ms": 189.92399994749576
+    },
+    "tick_components": {
+      "spmv": {
+        "n": 100,
+        "median_ms": 21.872478944715112,
+        "p95_ms": 22.414099966408685,
+        "min_ms": 21.364540909416974,
+        "max_ms": 23.076291079632938
+      },
+      "scale_input": {
+        "n": 100,
+        "median_ms": 0.04912493750452995,
+        "p95_ms": 0.06601845961995423,
+        "min_ms": 0.03937492147088051,
+        "max_ms": 0.1082499511539936
+      },
+      "rng": {
+        "n": 100,
+        "median_ms": 0.7737500127404928,
+        "p95_ms": 0.825937872286886,
+        "min_ms": 0.7427090313285589,
+        "max_ms": 0.8715000003576279
+      },
+      "pointwise": {
+        "n": 100,
+        "median_ms": 0.2300000051036477,
+        "p95_ms": 0.25517760077491397,
+        "min_ms": 0.22058305330574512,
+        "max_ms": 0.2882910193875432
+      }
+    },
+    "five_ticks_precomputed_noise": {
+      "n": 60,
+      "median_ms": 111.59281252184883,
+      "p95_ms": 123.44549935660324,
+      "min_ms": 110.49079208169132,
+      "max_ms": 130.3794999839738
+    },
+    "row_degree_percentiles": [
+      0.0,
+      100.0,
+      320.0,
+      455.0,
+      862.0,
+      11526.0
+    ],
+    "profile_sha256": "e1a3a5dbe1f8e6d4f87b6cf020153f0dcede33da5098031c5635daabbd0ad662"
+  },
+  "cpu1": {
+    "backend": "cpu1",
+    "edges": 25558671,
+    "latency": {
+      "max_ms": 235.858917,
+      "median_ms": 138.76975,
+      "min_ms": 129.3895,
+      "n": 60,
+      "p95_ms": 181.78128364999995
+    },
+    "max_abs_error": 2.384185791015625e-07,
+    "nodes": 164606,
+    "rmse": 2.692091504459718e-09,
+    "timing_scope": "five recurrent steps, precomputed noise; Metal includes host input/noise upload and full activity readback; excludes loading, RNG generation, image encoding, motor and socket"
+  },
+  "cpu5": {
+    "backend": "cpu5",
+    "edges": 25558671,
+    "latency": {
+      "max_ms": 66.65662499999999,
+      "median_ms": 43.3241875,
+      "min_ms": 40.817458,
+      "n": 60,
+      "p95_ms": 47.120321149999995
+    },
+    "max_abs_error": 2.384185791015625e-07,
+    "nodes": 164606,
+    "rmse": 2.692091504459718e-09,
+    "timing_scope": "five recurrent steps, precomputed noise; Metal includes host input/noise upload and full activity readback; excludes loading, RNG generation, image encoding, motor and socket"
+  },
+  "metal-serial": {
+    "backend": "metal-serial",
+    "edges": 25558671,
+    "latency": {
+      "max_ms": 29.981,
+      "median_ms": 24.4797085,
+      "min_ms": 23.306,
+      "n": 60,
+      "p95_ms": 26.53383155
+    },
+    "max_abs_error": 1.7881393432617188e-07,
+    "nodes": 164606,
+    "rmse": 3.8618619362813195e-09,
+    "timing_scope": "five recurrent steps, precomputed noise; Metal includes host input/noise upload and full activity readback; excludes loading, RNG generation, image encoding, motor and socket"
+  },
+  "metal-simd-first": {
+    "backend": "metal-simd",
+    "edges": 25558671,
+    "latency": {
+      "max_ms": 22.834125,
+      "median_ms": 11.1348755,
+      "min_ms": 10.013625,
+      "n": 60,
+      "p95_ms": 20.7621691
+    },
+    "max_abs_error": 1.7881393432617188e-07,
+    "nodes": 164606,
+    "rmse": 3.9059171017038394e-09,
+    "timing_scope": "five recurrent steps, precomputed noise; Metal includes host input/noise upload and full activity readback; excludes loading, RNG generation, image encoding, motor and socket"
+  },
+  "metal-simd": {
+    "backend": "metal-simd",
+    "edges": 25558671,
+    "latency": {
+      "max_ms": 64.183042,
+      "median_ms": 17.820562,
+      "min_ms": 11.496625,
+      "n": 60,
+      "p95_ms": 46.561794049999996
+    },
+    "max_abs_error": 1.7881393432617188e-07,
+    "nodes": 164606,
+    "rmse": 3.9059171017038394e-09,
+    "timing_scope": "five recurrent steps, precomputed noise; Metal includes host input/noise upload and full activity readback; excludes loading, RNG generation, image encoding, motor and socket"
+  },
+  "socket": {
+    "scope": "40 measured requests after 5 warmup; existing separate Python worker; step + inspect, including validation and JSON/TCP, excluding image generation",
+    "step_and_inspect": {
+      "n": 40,
+      "median_ms": 118.21610399056226,
+      "p95_ms": 123.37310000439174,
+      "min_ms": 116.12787505146116,
+      "max_ms": 124.11925010383129
+    },
+    "worker_compute": {
+      "n": 40,
+      "median_ms": 116.74643697915599,
+      "p95_ms": 121.99723331723362,
+      "min_ms": 114.73658308386803,
+      "max_ms": 122.69245903007686
+    },
+    "paired_non_compute_overhead": {
+      "n": 40,
+      "median_ms": 1.4043955015949905,
+      "p95_ms": 1.5659500961191952,
+      "min_ms": 1.3064580271020532,
+      "max_ms": 1.76379201002419
+    }
+  },
+  "parity": {
+    "cpu1": {
+      "motor_modes_match": true,
+      "motor_state_fields_match": true,
+      "max_steer_difference": 4.37431268984767e-09,
+      "max_evidence_difference": 2.384185791015625e-07,
+      "max_activity_difference": 2.384185791015625e-07,
+      "states_sha256": "07233b8187c0e32bf87a59625b870e262c3f45d6bc6f29dc5f3f1863302e6cd5",
+      "reference_modes": [
+        "approach",
+        "hold",
+        "retreat",
+        "search"
+      ]
+    },
+    "cpu5": {
+      "motor_modes_match": true,
+      "motor_state_fields_match": true,
+      "max_steer_difference": 4.37431268984767e-09,
+      "max_evidence_difference": 2.384185791015625e-07,
+      "max_activity_difference": 2.384185791015625e-07,
+      "states_sha256": "07233b8187c0e32bf87a59625b870e262c3f45d6bc6f29dc5f3f1863302e6cd5",
+      "reference_modes": [
+        "approach",
+        "hold",
+        "retreat",
+        "search"
+      ]
+    },
+    "metal-serial": {
+      "motor_modes_match": true,
+      "motor_state_fields_match": true,
+      "max_steer_difference": 1.4174020845914015e-08,
+      "max_evidence_difference": 4.76837158203125e-07,
+      "max_activity_difference": 1.7881393432617188e-07,
+      "states_sha256": "db453b18d900c84400fef577822908a52603df98c71ee2eb6d783b1bc06e93ab",
+      "reference_modes": [
+        "approach",
+        "hold",
+        "retreat",
+        "search"
+      ]
+    },
+    "metal-simd": {
+      "motor_modes_match": true,
+      "motor_state_fields_match": true,
+      "max_steer_difference": 1.4174020845914015e-08,
+      "max_evidence_difference": 4.76837158203125e-07,
+      "max_activity_difference": 1.7881393432617188e-07,
+      "states_sha256": "51561cb5dd3f371786e627dde405b029f7fee6e8414325ef3b05d2bd925b2de0",
+      "reference_modes": [
+        "approach",
+        "hold",
+        "retreat",
+        "search"
+      ]
+    }
+  },
+  "repeat": {
+    "scope": "60-decision identical-fixture replay, fresh process, same Metal backend; no worker checkpoint implementation tested",
+    "bitwise_equal": true,
+    "sha256": "51561cb5dd3f371786e627dde405b029f7fee6e8414325ef3b05d2bd925b2de0"
+  },
+  "source_sha256": {
+    "controller/brainworker/model.py": "c6fd94e55f2881d85154d390dff09f985059f8d192403b9c08143e4f838cb6aa",
+    "controller/brainworker/motor.py": "7c936468282962172876b265571c7be77d1721af7f2d1de978458b621224eea4",
+    "controller/brainworker/chromatic.py": "b59b93e202909a779ca5395db4d0451066216d0a1490290246f4432f6ba6a19f",
+    "data/cache/malecns-v1/manifest.json": "e1a3a5dbe1f8e6d4f87b6cf020153f0dcede33da5098031c5635daabbd0ad662",
+    "crates/desktop/src/coordinator.rs": "f324ce74fdcb16637e255a7801f1e2a0bb97c9b1416535fe8f68114b19cbd10a",
+    "crates/desktop/src/app.rs": "0b51a4f81eabdac144417af6dfe30ab2ed468483562f6220dab101f4a21d8706",
+    "crates/desktop/src/worker_client.rs": "650e4f4a74119f5e4491882b08c49b21b7bb85eb9d49a806eda55333b189d4ff"
+  },
+  "probe_source_sha256": {
+    "experiments/candle-evaluation/baseline.py": "d9b64fe94b157a51f8336b0439688810ef95d4984651224ceae888c1e912ead4",
+    "experiments/candle-evaluation/socket_baseline.py": "67f3b59aa8930e914db2d65c8d61d572466224bbbf29ad90e8f72bd86ede5a79",
+    "experiments/candle-evaluation/verify_parity.py": "75f39a80ef93112e0c223b330264bcf65369d63f47640347deaa9052b801592d",
+    "experiments/candle-evaluation/spike/Cargo.toml": "72f2343a4c75e16f656c1dddda0bef2385e5f7f7e025653649f6d589069fe94a",
+    "experiments/candle-evaluation/spike/Cargo.lock": "48127a631974afd87412f75387931afc1e1954b4cf3d63f437f264b7f60f216b",
+    "experiments/candle-evaluation/spike/src/main.rs": "aa8bd54742b917a98bf0eec065a10e7b1b7e09832861dc0342644160788e68e8",
+    "experiments/candle-evaluation/spike/src/step.metal": "850ea0fb0f3528868be56c6aa3bfce809a676178d3476a737d44905737babd19"
+  }
+}
