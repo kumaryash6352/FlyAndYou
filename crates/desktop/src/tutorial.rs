@@ -12,6 +12,7 @@ pub struct Tutorial {
     pub beat: usize,
     pub elapsed: f32,
     intro_started: bool,
+    paint_started: bool,
     start_pending: bool,
 }
 
@@ -24,6 +25,7 @@ impl Tutorial {
             beat: DONE,
             elapsed: 0.,
             intro_started: true,
+            paint_started: false,
             start_pending: false,
         }
     }
@@ -84,10 +86,11 @@ impl Tutorial {
         }
     }
     pub fn begin_paint(&mut self) -> bool {
-        if self.beat != READY {
+        if !self.can_paint() || self.paint_started {
             return false;
         }
         self.beat = DONE;
+        self.paint_started = true;
         self.start_pending = true;
         true
     }
@@ -104,6 +107,11 @@ impl Tutorial {
     }
     pub fn cancel_start(&mut self) {
         self.start_pending = false;
+        self.paint_started = true;
+    }
+    pub fn rearm_start(&mut self) {
+        self.start_pending = false;
+        self.paint_started = false;
     }
     pub fn caption(&self) -> &'static str {
         match self.beat {
@@ -135,7 +143,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn later_levels_are_ready_without_replaying_or_autostarting_tutorial() {
+    fn later_levels_start_on_first_paint_without_replaying_the_tutorial() {
         for level in 1..6 {
             let mut intro = Tutorial::for_level(level);
             assert!(!intro.awaiting_start());
@@ -143,8 +151,26 @@ mod tests {
             assert!(intro.can_paint());
             assert!(intro.show_rail());
             assert!(!intro.take_start());
+            assert!(intro.begin_paint());
+            assert!(intro.take_start());
+            assert!(!intro.active());
+            assert!(!intro.begin_paint());
+            assert!(!intro.take_start());
         }
         assert!(Tutorial::for_level(0).awaiting_start());
+    }
+
+    #[test]
+    fn explicit_start_cancellation_prevents_paint_from_resuming_play() {
+        let mut intro = Tutorial::default();
+        intro.start_intro();
+        intro.skip();
+        intro.cancel_start();
+        assert!(!intro.begin_paint());
+        assert!(!intro.take_start());
+        intro.rearm_start();
+        assert!(intro.begin_paint());
+        assert!(intro.take_start());
     }
 
     #[test]

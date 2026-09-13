@@ -7,5 +7,6 @@ if [ ! -f data/cache/malecns-rust-v1/manifest.json ]; then
   exit 1
 fi
 cargo build --release --locked -p fly-brain-worker
-cargo build --workspace --locked
+target/release/fly-brain-worker --prepare-tutorial
+cargo build --locked -p fly-and-you --bin fly-trailer
 exec target/debug/fly-trailer "$@"

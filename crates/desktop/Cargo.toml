@@ -9,6 +9,8 @@ name = "fly-trailer"
 path = "src/trailer_main.rs"
 
 [dependencies]
+brain_core = { path = "../brain_core", features = ["embedded-model"] }
+fly-brain-worker = { path = "../brain_worker" }
 world_core = { path = "../world_core" }
 wire_types = { path = "../wire_types" }
 bevy = { version = "=0.19.1", default-features = false, features = ["2d", "ui"] }

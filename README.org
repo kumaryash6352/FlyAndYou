@@ -7,7 +7,7 @@ Uses [[https://male-cns.janelia.org/]]
 
 * Play
 
-With the local dependencies prepared:
+Open =FlyAndYou.app= anywhere on your Mac. Its executable includes the prepared brain and tutorial assets. To build and run from this checkout after setup:
 
 #+begin_src sh
 ./scripts/run.sh
@@ -15,6 +15,6 @@ With the local dependencies prepared:
 
 Once loading finishes, press *Enter* to start the tutorial. The opening screen waits until you're ready to record; *Replay intro* returns to it for another take.
 
-Six puzzles are available in the toolbox level chooser. After a win, press *N* for the next level. Later levels start paused; *Space* runs or pauses, and *R* resets the current level.
+Six puzzles are available in the toolbox level chooser. After a win, press *N* for the next level. Every level starts moving on the first painting gesture. *Space* runs or pauses, and *R* resets the current level to wait for painting again.
 
-The full sparse brain now runs in a Rust/Candle Metal worker, targeting *25 decisions per second*. Python remains the data-preparation and numerical reference path.
+The full sparse brain now runs in a Rust/Candle Metal background thread inside the game, targeting *25 decisions per second*. Python remains the data-preparation and numerical reference path.

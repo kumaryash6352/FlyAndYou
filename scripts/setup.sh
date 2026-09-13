@@ -24,4 +24,4 @@ fi
 .venv/bin/python -m controller.brainworker.export_rust
 cargo build --release --locked -p fly-brain-worker
 target/release/fly-brain-worker --prepare-tutorial
-cargo build --workspace --locked
+cargo build --release --locked -p fly-and-you --bin fly-and-you

@@ -46,6 +46,9 @@ pub struct World {
     pub base: Vec<u8>,
     pub solid: Vec<u8>,
     pub paint: Vec<u8>,
+    /// XY paint projected onto both side walls of the 3D corridor.
+    #[serde(default = "empty_paint", skip_serializing_if = "is_clear_paint")]
+    pub wall_paint: Vec<u8>,
     pub actor: Actor,
     /// Horizontal camera heading, retained while stationary.
     pub facing: i8,
@@ -58,6 +61,12 @@ pub struct World {
     pub history: Vec<Edit>,
     pub future: Vec<Edit>,
     pub step_up: bool,
+}
+fn empty_paint() -> Vec<u8> {
+    vec![0; WIDTH * HEIGHT * 4]
+}
+fn is_clear_paint(paint: &[u8]) -> bool {
+    paint.iter().all(|v| *v == 0)
 }
 impl World {
     pub fn bridge() -> Self {
@@ -91,7 +100,8 @@ impl World {
             layout_hash: String::new(),
             base,
             solid: vec![0; COLS * ROWS],
-            paint: vec![0; WIDTH * HEIGHT * 4],
+            paint: empty_paint(),
+            wall_paint: empty_paint(),
             actor: Actor {
                 x: 64.,
                 y: 272.,
@@ -128,8 +138,12 @@ impl World {
             || w.base.len() != COLS * ROWS
             || w.solid.len() != COLS * ROWS
             || w.paint.len() != WIDTH * HEIGHT * 4
+            || w.wall_paint.len() != WIDTH * HEIGHT * 4
             || w.base.iter().chain(&w.solid).any(|v| *v > 1)
-            || w.paint.chunks_exact(4).any(|p| p[3] != 0 && p[3] != 255)
+            || w.paint
+                .chunks_exact(4)
+                .chain(w.wall_paint.chunks_exact(4))
+                .any(|p| p[3] != 0 && p[3] != 255)
             || ![w.actor.x, w.actor.y, w.actor.vx, w.actor.vy]
                 .iter()
                 .all(|v| v.is_finite())

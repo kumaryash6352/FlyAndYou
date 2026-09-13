@@ -4,7 +4,7 @@ fn stroke(tool: Tool, pts: &[[f64; 2]]) -> Stroke {
         tool,
         points: pts.to_vec(),
         radius: 4.0,
-        color: [227, 178, 61],
+        color: Some([227, 178, 61]),
     }
 }
 fn walk(w: &mut World, n: usize) {
@@ -195,7 +195,7 @@ fn perspective_cue_is_occluded_by_terrain() {
         tool: Tool::Ink,
         points: vec![[132., 260.]],
         radius: 24.,
-        color: [232, 186, 60],
+        color: Some([232, 186, 60]),
     })
     .unwrap();
     let warm_pixels = |rgb: Vec<u8>| {
@@ -253,12 +253,6 @@ fn only_painted_surfaces_bring_color_into_the_eye_view() {
             .chunks_exact(3)
             .all(|p| p[0] == p[1] && p[1] == p[2])
     );
-    assert_eq!(
-        w.edit(&stroke(Tool::Ink, &[[510., 180.], [530., 190.]]))
-            .unwrap(),
-        0
-    );
-    assert_eq!(w.observe(), initial);
     let mut s = stroke(Tool::Ink, &[[571., 248.]]);
     s.radius = 10.;
     assert!(w.edit(&s).unwrap() > 0);
@@ -292,4 +286,77 @@ fn only_painted_surfaces_bring_color_into_the_eye_view() {
     assert!(w.edit_live(&s, false).unwrap() > 0);
     // The dry brush can leave individual edge pixels blank.
     assert!((128..180).any(|x| w.paint[x * 4 + 3] == 255));
+}
+
+#[test]
+fn wall_ink_reaches_both_eyes_without_support_and_restores_exactly() {
+    let mut w = World::bridge();
+    let initial = w.observe();
+    let solids = w.solid.clone();
+    let mut s = stroke(Tool::Ink, &[[90., 260.], [150., 260.]]);
+    s.radius = 20.;
+    assert!(w.edit(&s).unwrap() > 0);
+    assert_eq!(w.solid, solids);
+    assert!(!w.occupied(26, 65));
+    let eye = w.observe();
+    for half in [0..64, 64..128] {
+        assert!((0..96).any(|y| half.clone().any(|x| {
+            let p = &eye[(y * 128 + x) * 3..][..3];
+            p[0].min(p[1]) > p[2].saturating_add(24)
+        })));
+    }
+    let saved = World::restore(&w.snapshot()).unwrap();
+    assert_eq!(saved.observe(), eye);
+    let mut occluded = saved.clone();
+    let mut post = stroke(Tool::Solid, &[[84., 200.], [84., 284.]]);
+    post.color = None;
+    occluded.edit(&post).unwrap();
+    assert!(
+        occluded
+            .observe()
+            .chunks_exact(3)
+            .all(|p| p[0] == p[1] && p[1] == p[2])
+    );
+    w.undo().unwrap();
+    assert_eq!(w.observe(), initial);
+    w.redo().unwrap();
+    assert_eq!(w.observe(), eye);
+    s.tool = Tool::EraseInk;
+    w.edit(&s).unwrap();
+    assert_eq!(w.observe(), initial);
+}
+
+#[test]
+fn colored_ground_and_its_ink_undo_as_one_live_gesture() {
+    let mut w = World::bridge();
+    let initial = w.compose();
+    let mut s = stroke(Tool::Solid, &[[100., 248.], [100., 270.]]);
+    s.radius = 8.;
+    w.edit_live(&s, false).unwrap();
+    s.points = vec![[100., 270.], [100., 282.]];
+    w.edit_live(&s, true).unwrap();
+    let eye = w.observe();
+    assert!(
+        eye.chunks_exact(3)
+            .any(|p| p[0].min(p[1]) > p[2].saturating_add(24))
+    );
+    assert_eq!(w.history.len(), 1);
+    let painted = w.compose();
+    w.undo().unwrap();
+    assert_eq!(w.compose(), initial);
+    w.redo().unwrap();
+    assert_eq!(w.compose(), painted);
+    assert_eq!(World::restore(&w.snapshot()).unwrap().observe(), eye);
+    s.tool = Tool::EraseSolid;
+    s.points = vec![[100., 248.], [100., 282.]];
+    w.edit(&s).unwrap();
+    assert_eq!(w.compose(), initial);
+    s.tool = Tool::Solid;
+    s.color = None;
+    w.edit(&s).unwrap();
+    assert!(
+        w.observe()
+            .chunks_exact(3)
+            .all(|p| p[0] == p[1] && p[1] == p[2])
+    );
 }

@@ -100,6 +100,10 @@ impl World {
             }
         }
         for (p, ink) in self.paint.chunks_exact(4).enumerate() {
+            let wall = &self.wall_paint[p * 4..p * 4 + 4];
+            if wall[3] == 255 && !self.paintable(p % WIDTH, p / WIDTH) {
+                rgb[p * 3..p * 3 + 3].copy_from_slice(&wall[..3]);
+            }
             if ink[3] == 255
                 && self.paintable(p % WIDTH, p / WIDTH)
                 && (show_goal || self.flag_pixel(p % WIDTH, p / WIDTH).is_none())

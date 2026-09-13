@@ -361,7 +361,7 @@ impl TrailerHost {
             let (tx, rx) = std::sync::mpsc::channel();
             self.loading = Some(rx);
             let autostart = self.autostart;
-            // macOS may wait here for Documents consent. Keep the window responsive.
+            // Initialize audio and run files without blocking the loading screen.
             std::thread::spawn(move || {
                 let _ = tx.send(Trailer::new(root, autostart));
             });

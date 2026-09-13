@@ -48,7 +48,7 @@ pub struct Session {
     root: PathBuf,
     epoch: Option<String>,
     next_id: u64,
-    cached: Option<(u64, String, Value)>,
+    cached: Option<(u64, String, Reply)>,
     elapsed_ms: f64,
 }
 impl Session {
@@ -86,6 +86,39 @@ impl Session {
     pub fn loaded(&self) -> Value {
         json!({"kind":"loaded","profile_sha256":self.brain.profile_hash,"mode":"MaleCNS fixed controller","nodes":self.brain.activity.len(),"edges":self.brain.profile.values.len(),"telemetry":self.brain.inspect()})
     }
+    /// Shared typed path for the game's task and the optional socket reference tool.
+    pub fn step(&mut self, r: &Step) -> Result<Reply, String> {
+        let rgb = r.validate()?;
+        if r.profile_sha256 != self.brain.profile_hash {
+            return Err("Wrong profile".into());
+        }
+        if let Some(e) = &self.epoch {
+            if e != &r.epoch {
+                return Err("Stale epoch".into());
+            }
+        }
+        let digest = hash(&serde_json::to_vec(&r).map_err(|e| e.to_string())?);
+        if let Some((id, old, reply)) = &self.cached {
+            if *id == r.step_id {
+                if *old != digest {
+                    return Err("Duplicate id with changed content".into());
+                }
+                return Ok(reply.clone());
+            }
+        }
+        if r.step_id != self.next_id || self.brain.ticks.checked_mul(2) != Some(r.physics_tick) {
+            return Err("Unexpected decision boundary".into());
+        }
+        let start = Instant::now();
+        let steer = self.brain.step_image(&rgb)?;
+        self.elapsed_ms = start.elapsed().as_secs_f64() * 1000.;
+        let reply = Reply::for_request(&r, steer);
+        reply.validate(&r)?;
+        self.next_id = self.next_id.checked_add(1).ok_or("Step overflow")?;
+        self.epoch = Some(r.epoch.clone());
+        self.cached = Some((r.step_id, digest, reply.clone()));
+        Ok(reply)
+    }
     pub fn handle(&mut self, request: Request) -> Result<Value, String> {
         match request {
             Request::Step {
@@ -117,39 +150,7 @@ impl Session {
                     neural_steps,
                     frame_b64,
                 };
-                let rgb = r.validate()?;
-                if r.profile_sha256 != self.brain.profile_hash {
-                    return Err("Wrong profile".into());
-                }
-                if let Some(e) = &self.epoch {
-                    if e != &r.epoch {
-                        return Err("Stale epoch".into());
-                    }
-                }
-                let digest = hash(&serde_json::to_vec(&r).map_err(|e| e.to_string())?);
-                if let Some((id, old, reply)) = &self.cached {
-                    if *id == r.step_id {
-                        if *old != digest {
-                            return Err("Duplicate id with changed content".into());
-                        }
-                        return Ok(reply.clone());
-                    }
-                }
-                if r.step_id != self.next_id
-                    || self.brain.ticks.checked_mul(2) != Some(r.physics_tick)
-                {
-                    return Err("Unexpected decision boundary".into());
-                }
-                let start = Instant::now();
-                let steer = self.brain.step_image(&rgb)?;
-                self.elapsed_ms = start.elapsed().as_secs_f64() * 1000.;
-                let reply = Reply::for_request(&r, steer);
-                reply.validate(&r)?;
-                let reply = serde_json::to_value(reply).map_err(|e| e.to_string())?;
-                self.next_id = self.next_id.checked_add(1).ok_or("Step overflow")?;
-                self.epoch = Some(r.epoch);
-                self.cached = Some((r.step_id, digest, reply.clone()));
-                Ok(reply)
+                serde_json::to_value(self.step(&r)?).map_err(|e| e.to_string())
             }
             Request::Restore { epoch, checkpoint } => {
                 if !valid_hex(&epoch, 32) {

@@ -20,7 +20,7 @@ pub struct Stroke {
     pub tool: Tool,
     pub points: Vec<[f64; 2]>,
     pub radius: f64,
-    pub color: [u8; 3],
+    pub color: Option<[u8; 3]>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Change {
@@ -33,6 +33,72 @@ pub struct Edit {
     pub solid: bool,
     pub based_on_revision: u64,
     pub changes: Vec<Change>,
+    /// Surface color accompanying a ground edit, committed and undone together.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub paint_changes: Vec<Change>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub wall_changes: Vec<Change>,
+}
+impl Edit {
+    fn len(&self) -> usize {
+        self.changes.len() + self.paint_changes.len() + self.wall_changes.len()
+    }
+}
+fn paint_pixel(layer: &[u8], changes: &mut Vec<Change>, pixel: usize, rgba: [u8; 4]) {
+    for (channel, after) in rgba.into_iter().enumerate() {
+        let index = pixel * 4 + channel;
+        if layer[index] != after {
+            changes.push(Change {
+                index,
+                before: layer[index],
+                after,
+            });
+        }
+    }
+}
+fn validate_changes(layer: &[u8], changes: &[Change], rgba: bool) -> Result<(), String> {
+    let mut seen = BTreeSet::new();
+    let mut pixels = std::collections::BTreeMap::<usize, [u8; 4]>::new();
+    for c in changes {
+        if c.index >= layer.len() || !seen.insert(c.index) || layer[c.index] != c.before {
+            return Err("Stale or invalid edit".into());
+        }
+        if rgba {
+            let p = c.index / 4;
+            let value = pixels
+                .entry(p)
+                .or_insert_with(|| layer[p * 4..p * 4 + 4].try_into().unwrap());
+            value[c.index % 4] = c.after;
+        }
+    }
+    if pixels.values().any(|p| p[3] != 0 && p[3] != 255) {
+        return Err("Ink must be opaque or erased".into());
+    }
+    Ok(())
+}
+fn merge_changes(prior: &mut Vec<Change>, changes: Vec<Change>) {
+    let mut merged: std::collections::BTreeMap<usize, Change> =
+        prior.drain(..).map(|c| (c.index, c)).collect();
+    for c in changes {
+        merged
+            .entry(c.index)
+            .and_modify(|old| old.after = c.after)
+            .or_insert(c);
+    }
+    *prior = merged
+        .into_values()
+        .filter(|c| c.before != c.after)
+        .collect();
+}
+fn inverse_changes(changes: &[Change]) -> Vec<Change> {
+    changes
+        .iter()
+        .map(|c| Change {
+            index: c.index,
+            before: c.after,
+            after: c.before,
+        })
+        .collect()
 }
 pub fn capsule_cells(points: &[[f64; 2]], radius: f64, cell: usize) -> Result<Vec<usize>, String> {
     if points.is_empty()
@@ -99,6 +165,8 @@ impl World {
         let cells = capsule_cells(&s.points, s.radius, if s.tool.solid() { 4 } else { 1 })?;
         let touched: BTreeSet<usize> = cells.iter().copied().collect();
         let mut changes = vec![];
+        let mut paint_changes = vec![];
+        let mut wall_changes = vec![];
         for i in cells {
             if live {
                 let size = if s.tool.solid() { 4 } else { 1 };
@@ -109,8 +177,7 @@ impl World {
                     size as f64,
                     size as f64,
                 ];
-                if (self.protected.iter().any(|r| overlaps(*r, rect))
-                    && (s.tool.solid() || !self.paintable(i % width, i / width)))
+                if (s.tool.solid() && self.protected.iter().any(|r| overlaps(*r, rect)))
                     || (s.tool == Tool::Solid
                         && overlaps(rect, [self.actor.x - 10., self.actor.y - 12., 20., 24.]))
                 {
@@ -140,34 +207,52 @@ impl World {
                         after,
                     });
                 }
-            } else {
-                if !self.paintable(i % WIDTH, i / WIDTH) && !s.tool.erase() {
-                    continue;
-                }
-                let rgba = if s.tool.erase() {
-                    [0, 0, 0, 0]
+                // Color the exact accepted collision cells, including their edges.
+                // Erasing ground removes its ink and reveals the independent wall.
+                let color = if s.tool.erase() {
+                    (self.solid[i] != 0).then_some([0; 4])
                 } else {
+                    s.color.map(|[r, g, b]| [r, g, b, 255])
+                };
+                if let Some(rgba) = color {
+                    for y in (i / COLS * 4)..(i / COLS * 4 + 4) {
+                        for x in (i % COLS * 4)..(i % COLS * 4 + 4) {
+                            let pixel = y * WIDTH + x;
+                            let mut rgba = rgba;
+                            if live && rgba[3] == 255 {
+                                let grain =
+                                    ((pixel.wrapping_mul(73) ^ y.wrapping_mul(151)) % 13) as u8;
+                                for c in &mut rgba[..3] {
+                                    *c = c.saturating_sub(grain);
+                                }
+                            }
+                            paint_pixel(&self.paint, &mut paint_changes, pixel, rgba);
+                        }
+                    }
+                }
+            } else {
+                let rgba = if s.tool.erase() {
+                    [0; 4]
+                } else if let Some(color) = s.color {
                     let grain = if live {
                         ((i.wrapping_mul(73) ^ (i / WIDTH).wrapping_mul(151)) % 13) as u8
                     } else {
                         0
                     };
                     [
-                        s.color[0].saturating_sub(grain),
-                        s.color[1].saturating_sub(grain),
-                        s.color[2].saturating_sub(grain),
+                        color[0].saturating_sub(grain),
+                        color[1].saturating_sub(grain),
+                        color[2].saturating_sub(grain),
                         255,
                     ]
+                } else {
+                    continue;
                 };
-                for (c, after) in rgba.into_iter().enumerate() {
-                    let index = i * 4 + c;
-                    if self.paint[index] != after {
-                        changes.push(Change {
-                            index,
-                            before: self.paint[index],
-                            after,
-                        });
-                    }
+                if s.tool.erase() || self.paintable(i % WIDTH, i / WIDTH) {
+                    paint_pixel(&self.paint, &mut changes, i, rgba);
+                }
+                if s.tool.erase() || !self.paintable(i % WIDTH, i / WIDTH) {
+                    paint_pixel(&self.wall_paint, &mut wall_changes, i, rgba);
                 }
             }
         }
@@ -175,6 +260,8 @@ impl World {
             solid: s.tool.solid(),
             based_on_revision: self.revision,
             changes,
+            paint_changes,
+            wall_changes,
         };
         self.validate_edit(&e)?;
         Ok(e)
@@ -184,23 +271,23 @@ impl World {
             return Err("The world changed during this stroke".into());
         }
         let layer = if e.solid { &self.solid } else { &self.paint };
-        let mut seen = BTreeSet::new();
-        for c in &e.changes {
-            if c.index >= layer.len() || !seen.insert(c.index) || layer[c.index] != c.before {
-                return Err("Stale or invalid edit".into());
-            }
-            let (x, y, size) = if e.solid {
-                ((c.index % COLS) * 4, (c.index / COLS) * 4, 4)
-            } else {
-                ((c.index / 4) % WIDTH, (c.index / 4) / WIDTH, 1)
-            };
-            let rect = [x as f64, y as f64, size as f64, size as f64];
-            if self.protected.iter().any(|r| overlaps(*r, rect))
-                && (e.solid || !self.paintable(x, y))
-            {
-                return Err("Keep the border and the little flag clear".into());
-            }
-            if e.solid {
+        validate_changes(layer, &e.changes, !e.solid)?;
+        if !e.solid && !e.paint_changes.is_empty() {
+            return Err("Unexpected compound ink edit".into());
+        }
+        validate_changes(&self.paint, &e.paint_changes, true)?;
+        validate_changes(&self.wall_paint, &e.wall_changes, true)?;
+        if e.solid {
+            for c in &e.changes {
+                let rect = [
+                    ((c.index % COLS) * 4) as f64,
+                    ((c.index / COLS) * 4) as f64,
+                    4.,
+                    4.,
+                ];
+                if self.protected.iter().any(|r| overlaps(*r, rect)) {
+                    return Err("Keep the border and the little flag clear".into());
+                }
                 if c.after > 1 || self.base[c.index] != 0 {
                     return Err("Original ground cannot be changed".into());
                 }
@@ -218,24 +305,11 @@ impl World {
             }
             self.validate_ground(&next)?;
         }
-        if !e.solid {
-            let mut pixels = std::collections::BTreeMap::<usize, [u8; 4]>::new();
-            for c in &e.changes {
-                let p = c.index / 4;
-                let rgba = pixels
-                    .entry(p)
-                    .or_insert_with(|| self.paint[p * 4..p * 4 + 4].try_into().unwrap());
-                rgba[c.index % 4] = c.after;
-            }
-            if pixels.values().any(|p| p[3] != 0 && p[3] != 255) {
-                return Err("Ink must be opaque or erased".into());
-            }
-        }
         Ok(())
     }
     pub fn apply(&mut self, e: &Edit) -> Result<(), String> {
         self.validate_edit(e)?;
-        if e.changes.is_empty() {
+        if e.len() == 0 {
             return Ok(());
         }
         let layer = if e.solid {
@@ -246,12 +320,18 @@ impl World {
         for c in &e.changes {
             layer[c.index] = c.after;
         }
+        for c in &e.paint_changes {
+            self.paint[c.index] = c.after;
+        }
+        for c in &e.wall_changes {
+            self.wall_paint[c.index] = c.after;
+        }
         self.revision += 1;
         Ok(())
     }
     pub fn edit(&mut self, s: &Stroke) -> Result<usize, String> {
         let e = self.plan(s)?;
-        let n = e.changes.len();
+        let n = e.len();
         self.apply(&e)?;
         if n > 0 {
             self.history.push(e);
@@ -264,27 +344,14 @@ impl World {
     }
     pub fn edit_live(&mut self, s: &Stroke, continuation: bool) -> Result<usize, String> {
         let e = self.plan_brush(s, true)?;
-        let n = e.changes.len();
+        let n = e.len();
         self.apply(&e)?;
         if n > 0 {
             if continuation && self.history.last().is_some_and(|v| v.solid == e.solid) {
                 let prior = self.history.last_mut().unwrap();
-                let mut merged: std::collections::BTreeMap<usize, Change> = prior
-                    .changes
-                    .iter()
-                    .cloned()
-                    .map(|c| (c.index, c))
-                    .collect();
-                for c in e.changes {
-                    merged
-                        .entry(c.index)
-                        .and_modify(|old| old.after = c.after)
-                        .or_insert(c);
-                }
-                prior.changes = merged
-                    .into_values()
-                    .filter(|c| c.before != c.after)
-                    .collect();
+                merge_changes(&mut prior.changes, e.changes);
+                merge_changes(&mut prior.paint_changes, e.paint_changes);
+                merge_changes(&mut prior.wall_changes, e.wall_changes);
             } else {
                 self.history.push(e);
                 if self.history.len() > 64 {
@@ -300,15 +367,9 @@ impl World {
         let inverse = Edit {
             solid: e.solid,
             based_on_revision: self.revision,
-            changes: e
-                .changes
-                .iter()
-                .map(|c| Change {
-                    index: c.index,
-                    before: c.after,
-                    after: c.before,
-                })
-                .collect(),
+            changes: inverse_changes(&e.changes),
+            paint_changes: inverse_changes(&e.paint_changes),
+            wall_changes: inverse_changes(&e.wall_changes),
         };
         self.apply(&inverse)?;
         self.history.pop();

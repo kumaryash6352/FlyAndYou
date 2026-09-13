@@ -1,5 +1,5 @@
-mod session;
 use brain_core::Brain;
+use fly_brain_worker::session;
 use session::{Request, Session};
 use std::{
     io::{BufReader, Write},
@@ -95,11 +95,7 @@ fn prepare_tutorial(root: &std::path::Path) -> Result<(), String> {
     let mut brain = Brain::load(root, false)?;
     let initial = brain.snapshot();
     let scenes = world_core::tutorial_cue;
-    let mut sources = brain_core::source_hashes();
-    sources.insert(
-        "crates/brain_worker/src/main.rs".into(),
-        wire_types::hash(include_bytes!("main.rs")),
-    );
+    let sources = fly_brain_worker::tutorial_source_hashes();
     let mut identity = serde_json::json!({"schema":2,"sensor":world_core::SENSOR_PROFILE,"profile_sha256":brain.profile_hash,"sources":sources,"seed":7,"seconds_per_sample":0.2});
     let output = root.join("data/cache/tutorial-rust.json");
     let worlds = [[195, 80, 57], [232, 186, 60]].map(scenes);

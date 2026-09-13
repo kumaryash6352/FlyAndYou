@@ -5,7 +5,7 @@ pub fn bridge_stroke() -> Stroke {
         tool: Tool::Solid,
         points: vec![[184., 290.], [300., 290.]],
         radius: 10.,
-        color: YELLOW,
+        color: None,
     }
 }
 
@@ -48,7 +48,7 @@ pub fn tower(tool: Tool) -> Stroke {
         tool,
         points: vec![[396., 120.], [396., 296.]],
         radius: if tool.erase() { 24. } else { 20. },
-        color: YELLOW,
+        color: None,
     }
 }
 
@@ -57,7 +57,7 @@ pub fn yellow_stroke() -> Stroke {
         tool: Tool::Ink,
         points: vec![[140., 283.], [550., 283.]],
         radius: 24.,
-        color: YELLOW,
+        color: Some(YELLOW),
     }
 }
 
@@ -66,7 +66,7 @@ pub fn red_stroke() -> Stroke {
         tool: Tool::Ink,
         points: vec![[400., 283.], [536., 283.]],
         radius: 24.,
-        color: RED,
+        color: Some(RED),
     }
 }
 
@@ -75,7 +75,7 @@ pub fn rug_stroke() -> Stroke {
         tool: Tool::EraseSolid,
         points: vec![[292., 142.], [380., 142.]],
         radius: 24.,
-        color: YELLOW,
+        color: Some(YELLOW),
     }
 }
 

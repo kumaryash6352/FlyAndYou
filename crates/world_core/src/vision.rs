@@ -48,6 +48,18 @@ impl World {
                     .rem_euclid(23)
                     == 0;
                 let mut c = [if grain { 215 } else { 221 }; 3];
+                let wall_x = self.actor.x + dx * wall_t;
+                let wall_y = self.actor.y + dy * wall_t;
+                if wall_t < FAR
+                    && (0.0..WIDTH as f64).contains(&wall_x)
+                    && (0.0..HEIGHT as f64).contains(&wall_y)
+                {
+                    let ink =
+                        &self.wall_paint[(wall_y as usize * WIDTH + wall_x as usize) * 4..][..4];
+                    if ink[3] == 255 {
+                        c.copy_from_slice(&ink[..3]);
+                    }
+                }
                 let mut cx = (self.actor.x / 4.).floor() as i32;
                 let mut cy = (self.actor.y / 4.).floor() as i32;
                 let sx = self.facing as i32;

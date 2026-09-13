@@ -21,7 +21,7 @@ pub struct Desktop {
     pub radius: f64,
     pub ground_radius: f64,
     pub ink_radius: f64,
-    pub color: [u8; 3],
+    pub color: Option<[u8; 3]>,
     pub stroke: Option<Stroke>,
     pub pending_strokes: std::collections::VecDeque<(u64, Stroke)>,
     pub gesture: u64,
@@ -76,7 +76,7 @@ impl Desktop {
             radius: 8.,
             ground_radius: 8.,
             ink_radius: 24.,
-            color: [232, 186, 60],
+            color: None,
             stroke: None,
             pending_strokes: std::collections::VecDeque::new(),
             gesture: 0,
@@ -127,6 +127,14 @@ impl Desktop {
             self.ink_radius
         };
     }
+    pub fn select_color(&mut self, color: [u8; 3]) {
+        self.color = if self.color == Some(color) {
+            None
+        } else {
+            Some(color)
+        };
+        self.select_tool(Tool::Ink);
+    }
     pub fn log(&mut self, mut value: serde_json::Value) {
         value["wall_ms"] = (self.journal_start.elapsed().as_secs_f64() * 1000.).into();
         if let Some(f) = &mut self.journal {
@@ -150,7 +158,7 @@ impl Desktop {
     pub(crate) fn update_with_dt(&mut self, dt: f64) {
         self.sim.advance(dt);
         loop {
-            let event = self.worker.as_ref().and_then(|w| w.rx.try_recv().ok());
+            let event = self.worker.as_ref().and_then(|w| w.try_recv().ok());
             let Some(event) = event else { break };
             match event {
                 Event::Loaded { profile, telemetry } => {
@@ -158,7 +166,6 @@ impl Desktop {
                     self.sim.loaded(profile);
                     self.telemetry = telemetry;
                     match crate::tutorial_demo::ColorDemos::load(
-                        &self.root,
                         &self.sim.profile,
                         self.telemetry.anatomy_activity.len(),
                     ) {
@@ -396,6 +403,9 @@ impl Desktop {
             self.tutorial.skip();
         }
         self.queue_restore(world, if bookmark { "bookmark" } else { "initial" });
+        if !bookmark {
+            self.tutorial.rearm_start();
+        }
     }
     pub fn load_level(&mut self, level: usize) {
         if level >= world_core::LEVELS.len()
@@ -421,7 +431,7 @@ impl Desktop {
                 Tool::Solid
             },
         );
-        self.color = [232, 186, 60];
+        self.color = None;
         if let Some(demos) = &mut self.color_demos {
             demos.reset();
         }
@@ -460,7 +470,9 @@ impl Desktop {
         if self.saving || self.tutorial.active() {
             return;
         }
-        if self.tutorial.take_start() {
+        let pending_start = self.tutorial.take_start();
+        self.tutorial.cancel_start();
+        if pending_start {
             self.sim.pause();
             return;
         }

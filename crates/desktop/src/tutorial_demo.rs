@@ -1,7 +1,7 @@
 use crate::{brain_view::BrainView, worker_client::Telemetry};
 use bevy_egui::egui::{self, TextureHandle};
 use serde::Deserialize;
-use std::{collections::BTreeMap, path::Path};
+use std::collections::BTreeMap;
 use wire_types::hash;
 use world_core::{SENSOR_PROFILE, tutorial_cue};
 
@@ -36,10 +36,9 @@ pub struct ColorDemos {
 }
 
 impl ColorDemos {
-    pub fn load(root: &Path, profile: &str, anatomy_count: usize) -> Result<Self, String> {
-        let data =
-            std::fs::read(root.join("data/cache/tutorial-rust.json")).map_err(|e| e.to_string())?;
-        let recording: Recording = serde_json::from_slice(&data).map_err(|e| e.to_string())?;
+    pub fn load(profile: &str, anatomy_count: usize) -> Result<Self, String> {
+        let data = include_bytes!(concat!(env!("OUT_DIR"), "/tutorial-rust.json"));
+        let recording: Recording = serde_json::from_slice(data).map_err(|e| e.to_string())?;
         if recording.schema != 2
             || recording.sensor != SENSOR_PROFILE
             || recording.profile_sha256 != profile
@@ -49,20 +48,8 @@ impl ColorDemos {
         {
             return Err("Color demonstration profile changed; run scripts/setup.sh.".into());
         }
-        for name in [
-            "crates/brain_core/src/model.rs",
-            "crates/brain_core/src/profile.rs",
-            "crates/brain_core/src/motor.rs",
-            "crates/brain_core/src/rng.rs",
-            "crates/brain_core/src/backend.rs",
-            "crates/brain_core/src/step.metal",
-            "crates/brain_core/Cargo.toml",
-            "crates/brain_worker/src/main.rs",
-        ] {
-            let bytes = std::fs::read(root.join(name)).map_err(|e| e.to_string())?;
-            if recording.sources.get(name) != Some(&hash(&bytes)) {
-                return Err("Color demonstration model changed; run scripts/setup.sh.".into());
-            }
+        if recording.sources != fly_brain_worker::tutorial_source_hashes() {
+            return Err("Color demonstration model changed; run scripts/setup.sh.".into());
         }
         let mut clips = Vec::new();
         for (scene, color) in recording

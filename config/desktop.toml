@@ -37,9 +37,11 @@ actor_visible = false
 hud_visible = false
 turn_with_heading = true
 terrain_occludes = true
+empty_space_ink = "both_corridor_side_walls"
 
 [editor]
 pause_on_stroke = false
+start_on_first_stroke = true
 solid_radius_min_px = 4
 solid_radius_max_px = 24
 visual_radius_min_px = 1
@@ -47,10 +49,17 @@ visual_radius_max_px = 24
 max_polyline_points = 2048
 actor_guard_px = 4
 max_undo_transactions = 64
+color_selects_ink = true
+selected_color_toggles_off = true
+ground_uses_selected_color = true
+default_color = "none"
 
 [controller]
 mode = "malecns_fixed"
 backend = "candle-metal-csr-f32-v1"
+execution = "in_process_background_thread"
+transport = "bounded_channels"
+model_storage = "embedded"
 rng = "numpy-pcg64-normal-f64-v1"
 protocol_version = 2
 learning = false

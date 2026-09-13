@@ -1,6 +1,7 @@
 use crate::{motor::MotorConfig, rng::NumpyRng};
 use serde::{Deserialize, Serialize};
 use std::{
+    borrow::Cow,
     collections::{BTreeMap, HashSet},
     path::Path,
 };
@@ -79,8 +80,22 @@ fn read(p: &Path, max: u64) -> Result<Vec<u8>, String> {
 }
 impl Profile {
     pub fn load(root: &Path) -> Result<Self, String> {
-        let dir = root.join("data/cache/malecns-rust-v1");
-        let bytes = read(&dir.join("manifest.json"), 65536)?;
+        Self::from_assets(|name, max| read(&root.join(name), max).map(Cow::Owned))
+    }
+    #[cfg(feature = "embedded-model")]
+    pub fn embedded() -> Result<Self, String> {
+        Self::from_assets(|name, max| {
+            let bytes = crate::embedded::asset(name)?;
+            if bytes.len() as u64 > max {
+                return Err(format!("Embedded profile asset too large: {name}"));
+            }
+            Ok(Cow::Borrowed(bytes))
+        })
+    }
+    fn from_assets<'a>(
+        asset: impl Fn(&str, u64) -> Result<Cow<'a, [u8]>, String>,
+    ) -> Result<Self, String> {
+        let bytes = asset("data/cache/malecns-rust-v1/manifest.json", 65536)?;
         let m: Manifest = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
         if m.schema != 1
             || m.backend != BACKEND
@@ -106,15 +121,9 @@ impl Profile {
             return Err("Incompatible Rust brain profile; run scripts/setup.sh".into());
         }
         m.motor.validate()?;
-        if hash(&read(
-            &root.join("data/cache/malecns-v1/manifest.json"),
-            65536,
-        )?) != m.source_profile_sha256
-            || hash(&read(&root.join("data/source.lock.json"), 65536)?) != m.source_lock_sha256
-            || hash(&read(
-                &root.join("controller/brainworker/export_rust.py"),
-                65536,
-            )?) != m.exporter_sha256
+        if hash(&asset("data/cache/malecns-v1/manifest.json", 65536)?) != m.source_profile_sha256
+            || hash(&asset("data/source.lock.json", 65536)?) != m.source_lock_sha256
+            || hash(&asset("controller/brainworker/export_rust.py", 65536)?) != m.exporter_sha256
         {
             return Err("Prepared source provenance changed; regenerate Rust profile".into());
         }
@@ -128,7 +137,7 @@ impl Profile {
         }
         let mut files = BTreeMap::new();
         for name in required {
-            let data = read(&dir.join(name), 256_000_000)?;
+            let data = asset(&format!("data/cache/malecns-rust-v1/{name}"), 256_000_000)?;
             if hash(&data) != m.files[name] {
                 return Err(format!("Prepared digest mismatch: {name}"));
             }
@@ -147,9 +156,13 @@ impl Profile {
         };
         let rows = integers("rows.u32", m.nodes + 1)?;
         let columns = integers("columns.u32", m.edges)?;
-        let values: Vec<f32> = integers("values.f32", m.edges)?
-            .into_iter()
-            .map(f32::from_bits)
+        let value_bytes = &files["values.f32"];
+        if value_bytes.len() != m.edges * 4 {
+            return Err("Invalid array length: values.f32".into());
+        }
+        let values: Vec<f32> = value_bytes
+            .chunks_exact(4)
+            .map(|x| f32::from_le_bytes(x.try_into().unwrap()))
             .collect();
         if rows[0] != 0
             || rows[m.nodes] as usize != m.edges

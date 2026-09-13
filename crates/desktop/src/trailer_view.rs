@@ -26,19 +26,14 @@ pub fn loading(ctx: &Context, error: &str) {
                 ui,
                 rect.translate(vec2(0., 85.)),
                 if error.is_empty() {
-                    "If macOS asks, allow access to Documents."
+                    "Loading the embedded neural model."
                 } else {
                     error
                 },
                 25.,
                 INK,
             );
-            small(
-                ui,
-                all,
-                "Check for a permission dialog behind this window. The take waits for Enter.",
-                40.,
-            );
+            small(ui, all, "The take waits for Enter.", 40.);
         });
 }
 
@@ -116,7 +111,10 @@ pub fn draw(t: &mut Trailer, ctx: &Context) {
                     } else if stroke.tool.solid() {
                         Color32::from_rgb(104, 114, 84)
                     } else {
-                        Color32::from_rgb(stroke.color[0], stroke.color[1], stroke.color[2])
+                        {
+                            let [r, g, b] = stroke.color.unwrap_or([104, 114, 84]);
+                            Color32::from_rgb(r, g, b)
+                        }
                     };
                     painter.circle_stroke(p, stroke.radius as f32 * scale, Stroke::new(1.4, color));
                     painter.line_segment(
@@ -154,11 +152,14 @@ pub fn draw(t: &mut Trailer, ctx: &Context) {
                     26.,
                     INK,
                 );
-            small(
-                ui,
-                all,
-                if t.ready() { "Enter starts a ~60 second take    ·    Space pauses    ·    R resets" }
-                else { "If macOS asks, allow Documents access. Check for a dialog behind this window." },
+                small(
+                    ui,
+                    all,
+                    if t.ready() {
+                        "Enter starts a ~60 second take    ·    Space pauses    ·    R resets"
+                    } else {
+                        "Loading the embedded neural model."
+                    },
                     26.,
                 );
             }

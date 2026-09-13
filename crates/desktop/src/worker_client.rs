@@ -1,18 +1,20 @@
+use brain_core::Brain;
+use fly_brain_worker::session::{Request, Session};
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
 use std::{
-    io::{BufRead, BufReader},
-    net::TcpStream,
+    cell::Cell,
+    io::Write,
     path::Path,
-    process::{Child, Command as ProcessCommand, Stdio},
     sync::{
-        Arc, Mutex,
-        mpsc::{self, Receiver, SyncSender},
+        Arc,
+        atomic::{AtomicBool, Ordering},
+        mpsc::{self, Receiver, SyncSender, TryRecvError},
     },
     thread,
     time::{Duration, Instant},
 };
-use wire_types::{Reply, Step, read_frame, write_frame};
+use wire_types::{Reply, Step};
+
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct Telemetry {
     #[serde(default)]
@@ -71,164 +73,343 @@ pub enum Event {
     },
     Fault(String),
 }
+// A timed-out GPU task cannot be killed safely in-process. Keep at most one
+// model owner alive; Reset may retry once its current operation has returned.
+static ACTIVE_TASK: AtomicBool = AtomicBool::new(false);
+struct TaskLease;
+impl Drop for TaskLease {
+    fn drop(&mut self) {
+        ACTIVE_TASK.store(false, Ordering::Release);
+    }
+}
+
 pub struct Worker {
-    pub tx: SyncSender<Command>,
-    pub rx: Receiver<Event>,
-    child: Arc<Mutex<Child>>,
+    tx: SyncSender<Command>,
+    rx: Receiver<Event>,
+    stop: Arc<AtomicBool>,
+    pending: Cell<Option<(Instant, Duration)>>,
+    faulted: Cell<bool>,
 }
 impl Worker {
     pub fn launch(root: &Path, run_name: &str) -> Result<Self, String> {
+        if run_name.is_empty()
+            || !run_name
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+        {
+            return Err("Invalid run name".into());
+        }
         std::fs::create_dir_all(root.join("runs")).map_err(|e| e.to_string())?;
-        let log = std::fs::File::create(root.join("runs/worker.log")).map_err(|e| e.to_string())?;
-        let sibling = std::env::current_exe().ok().and_then(|p| {
-            p.parent()
-                .filter(|p| p.file_name().is_some_and(|name| name == "MacOS"))
-                .map(|p| p.join("fly-brain-worker"))
-        });
-        let executable = sibling
-            .filter(|p| p.is_file())
-            .unwrap_or_else(|| root.join("target/release/fly-brain-worker"));
-        let mut child = ProcessCommand::new(executable)
-            .current_dir(root)
-            .args(["--runs", &format!("runs/{run_name}")])
-            .stdout(Stdio::piped())
-            .stderr(Stdio::from(log))
-            .spawn()
-            .map_err(|e| format!("Cannot start neural worker: {e}. Run scripts/setup.sh."))?;
-        let stdout = child.stdout.take().ok_or("Missing worker output")?;
-        let child = Arc::new(Mutex::new(child));
+        let mut log =
+            std::fs::File::create(root.join("runs/worker.log")).map_err(|e| e.to_string())?;
+        ACTIVE_TASK
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+            .map_err(|_| {
+                "The previous neural task is still stopping. Try Reset again after it returns."
+                    .to_string()
+            })?;
+        let run_dir = root.join("runs").join(run_name);
         let (tx, commands) = mpsc::sync_channel(1);
         let (events, rx) = mpsc::sync_channel(4);
-        thread::spawn(move || {
-            let result = (|| -> Result<(), String> {
-                let mut line = String::new();
-                BufReader::new(stdout)
-                    .read_line(&mut line)
-                    .map_err(|e| e.to_string())?;
-                if line.len() > 4096 {
-                    return Err("Invalid worker startup".into());
-                }
-                let port: Value = serde_json::from_str(&line)
-                    .map_err(|_| "Worker failed to start; see runs/worker.log")?;
-                let port = port["port"]
-                    .as_u64()
-                    .filter(|p| *p > 0 && *p <= 65535)
-                    .ok_or("Invalid local port")?;
-                let mut socket =
-                    TcpStream::connect(("127.0.0.1", port as u16)).map_err(|e| e.to_string())?;
-                socket.set_nodelay(true).map_err(|e| e.to_string())?;
-                socket
-                    .set_read_timeout(Some(Duration::from_secs(30)))
-                    .map_err(|e| e.to_string())?;
-                socket
-                    .set_write_timeout(Some(Duration::from_secs(2)))
-                    .map_err(|e| e.to_string())?;
-                let loaded: Value = read_frame(&mut socket)?;
-                if loaded["kind"] != "loaded" {
-                    return Err("Neural profile failed to load".into());
-                }
-                let profile = loaded["profile_sha256"]
-                    .as_str()
-                    .ok_or("Missing profile hash")?
-                    .to_string();
-                let telemetry = serde_json::from_value(loaded["telemetry"].clone())
-                    .map_err(|e| e.to_string())?;
-                events
-                    .send(Event::Loaded { profile, telemetry })
-                    .map_err(|e| e.to_string())?;
-                socket
-                    .set_read_timeout(Some(Duration::from_secs(2)))
-                    .map_err(|e| e.to_string())?;
-                while let Ok(cmd) = commands.recv() {
-                    match cmd {
-                        Command::Step(r) => {
-                            let start = Instant::now();
-                            write_frame(&mut socket, &r)?;
-                            let reply: Reply = read_frame(&mut socket)?;
-                            reply.validate(&r)?;
-                            write_frame(
-                                &mut socket,
-                                &json!({"kind":"inspect","epoch":r.epoch,"step_id":r.step_id}),
-                            )?;
-                            let v: Value = read_frame(&mut socket)?;
-                            if v["kind"] != "inspection"
-                                || v["epoch"] != r.epoch
-                                || v["step_id"] != r.step_id
-                            {
-                                return Err("Invalid inspection identity".into());
-                            }
-                            let telemetry = serde_json::from_value(v["telemetry"].clone())
-                                .map_err(|e| e.to_string())?;
-                            events
-                                .send(Event::Action {
-                                    reply,
-                                    telemetry,
-                                    ms: start.elapsed().as_secs_f64() * 1000.,
-                                })
-                                .map_err(|e| e.to_string())?;
+        let stop = Arc::new(AtomicBool::new(false));
+        let cancelled = Arc::clone(&stop);
+        let spawned = thread::Builder::new()
+            .name("fly-brain".into())
+            .spawn(move || {
+                let _lease = TaskLease;
+                let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    // Construct and use Candle/Metal exclusively on this task's thread.
+                    let mut session = Session::new(Brain::embedded(false)?, run_dir)?;
+                    if cancelled.load(Ordering::Acquire) {
+                        return Ok(());
+                    }
+                    let loaded = session.loaded();
+                    let profile = loaded["profile_sha256"]
+                        .as_str()
+                        .ok_or("Missing profile hash")?
+                        .to_string();
+                    let telemetry = serde_json::from_value(loaded["telemetry"].clone())
+                        .map_err(|e| e.to_string())?;
+                    events
+                        .send(Event::Loaded { profile, telemetry })
+                        .map_err(|e| e.to_string())?;
+                    while let Ok(command) = commands.recv() {
+                        if cancelled.load(Ordering::Acquire) {
+                            break;
                         }
-                        Command::Restore { epoch, name } => {
-                            write_frame(
-                                &mut socket,
-                                &json!({"kind":"restore","epoch":epoch,"checkpoint":name}),
-                            )?;
-                            let v: Value = read_frame(&mut socket)?;
-                            if v["kind"] != "restored" || v["epoch"] != epoch {
-                                return Err("Invalid restoration acknowledgement".into());
+                        let event = match command {
+                            Command::Step(request) => {
+                                let start = Instant::now();
+                                let reply = session.step(&request)?;
+                                reply.validate(&request)?;
+                                let value = session.handle(Request::Inspect {
+                                    epoch: request.epoch.clone(),
+                                    step_id: request.step_id,
+                                })?;
+                                if value["kind"] != "inspection"
+                                    || value["epoch"] != request.epoch
+                                    || value["step_id"] != request.step_id
+                                {
+                                    return Err("Invalid inspection identity".into());
+                                }
+                                Event::Action {
+                                    reply,
+                                    telemetry: serde_json::from_value(value["telemetry"].clone())
+                                        .map_err(|e| e.to_string())?,
+                                    ms: start.elapsed().as_secs_f64() * 1000.,
+                                }
                             }
-                            events
-                                .send(Event::Restored {
+                            Command::Restore { epoch, name } => {
+                                let value = session.handle(Request::Restore {
+                                    epoch: epoch.clone(),
+                                    checkpoint: name,
+                                })?;
+                                if value["kind"] != "restored" || value["epoch"] != epoch {
+                                    return Err("Invalid restoration acknowledgement".into());
+                                }
+                                Event::Restored {
                                     epoch,
-                                    profile: v["profile_sha256"]
+                                    profile: value["profile_sha256"]
                                         .as_str()
                                         .ok_or("Missing profile")?
                                         .into(),
-                                    tick: v["physics_tick"].as_u64().ok_or("Missing tick")?,
-                                    step_id: v["next_step_id"].as_u64().ok_or("Missing step")?,
-                                    telemetry: serde_json::from_value(v["telemetry"].clone())
+                                    tick: value["physics_tick"].as_u64().ok_or("Missing tick")?,
+                                    step_id: value["next_step_id"]
+                                        .as_u64()
+                                        .ok_or("Missing step")?,
+                                    telemetry: serde_json::from_value(value["telemetry"].clone())
                                         .map_err(|e| e.to_string())?,
-                                })
-                                .map_err(|e| e.to_string())?;
-                        }
-                        Command::Snapshot { epoch, name } => {
-                            write_frame(
-                                &mut socket,
-                                &json!({"kind":"snapshot","epoch":epoch,"name":name}),
-                            )?;
-                            let v: Value = read_frame(&mut socket)?;
-                            if v["kind"] != "snapshot" || v["name"] != name {
-                                return Err("Checkpoint failed".into());
+                                }
                             }
-                            events
-                                .send(Event::Saved {
+                            Command::Snapshot { epoch, name } => {
+                                let value = session.handle(Request::Save {
+                                    epoch,
+                                    name: name.clone(),
+                                })?;
+                                if value["kind"] != "snapshot" || value["name"] != name {
+                                    return Err("Checkpoint failed".into());
+                                }
+                                Event::Saved {
                                     name,
-                                    tick: v["physics_tick"].as_u64().ok_or("Missing tick")?,
-                                })
-                                .map_err(|e| e.to_string())?;
+                                    tick: value["physics_tick"].as_u64().ok_or("Missing tick")?,
+                                }
+                            }
+                            Command::Stop => break,
+                        };
+                        if cancelled.load(Ordering::Acquire) {
+                            break;
                         }
-                        Command::Stop => break,
+                        events.send(event).map_err(|e| e.to_string())?;
                     }
+                    Ok::<(), String>(())
+                }))
+                .unwrap_or_else(|_| {
+                    Err("Neural task panicked; Reset can reload the controller.".into())
+                });
+                if let Err(error) = result {
+                    let _ = writeln!(log, "{error}");
+                    let _ = events.send(Event::Fault(error));
                 }
-                Ok(())
-            })();
-            if let Err(e) = result {
-                let _ = events.send(Event::Fault(e));
-            }
-        });
-        Ok(Self { tx, rx, child })
+            });
+        if let Err(error) = spawned {
+            ACTIVE_TASK.store(false, Ordering::Release);
+            return Err(format!("Cannot start neural task: {error}"));
+        }
+        Ok(Self {
+            tx,
+            rx,
+            stop,
+            pending: Cell::new(Some((Instant::now(), Duration::from_secs(30)))),
+            faulted: Cell::new(false),
+        })
     }
-    pub fn send(&self, c: Command) -> Result<(), String> {
+    pub fn send(&self, command: Command) -> Result<(), String> {
+        if self.faulted.get() {
+            return Err("Neural task has stopped".into());
+        }
+        if self.pending.get().is_some() {
+            return Err("A neural command is already outstanding".into());
+        }
         self.tx
-            .try_send(c)
-            .map_err(|e| format!("Controller queue: {e}"))
+            .try_send(command)
+            .map_err(|e| format!("Controller queue: {e}"))?;
+        self.pending
+            .set(Some((Instant::now(), Duration::from_secs(2))));
+        Ok(())
+    }
+    pub fn try_recv(&self) -> Result<Event, TryRecvError> {
+        if self.faulted.get() {
+            return Err(TryRecvError::Empty);
+        }
+        match self.rx.try_recv() {
+            Ok(event) => {
+                self.pending.set(None);
+                if matches!(event, Event::Fault(_)) {
+                    self.faulted.set(true);
+                }
+                Ok(event)
+            }
+            Err(error) => {
+                let fault = if error == TryRecvError::Disconnected {
+                    Some("Neural task stopped unexpectedly".to_string())
+                } else if self
+                    .pending
+                    .get()
+                    .is_some_and(|(since, limit)| since.elapsed() > limit)
+                {
+                    Some("Neural task timed out; the world is paused. Try Reset once it has stopped.".to_string())
+                } else {
+                    None
+                };
+                if let Some(fault) = fault {
+                    self.faulted.set(true);
+                    self.stop.store(true, Ordering::Release);
+                    self.pending.set(None);
+                    Ok(Event::Fault(fault))
+                } else {
+                    Err(error)
+                }
+            }
+        }
     }
 }
 impl Drop for Worker {
     fn drop(&mut self) {
+        self.stop.store(true, Ordering::Release);
         let _ = self.tx.try_send(Command::Stop);
-        if let Ok(mut child) = self.child.lock() {
-            let _ = child.kill();
-            let _ = child.wait();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn receive(worker: &Worker) -> Event {
+        let since = Instant::now();
+        loop {
+            match worker.try_recv() {
+                Ok(Event::Fault(error)) => panic!("{error}"),
+                Ok(event) => return event,
+                Err(TryRecvError::Empty) if since.elapsed() < Duration::from_secs(35) => {
+                    thread::sleep(Duration::from_millis(2));
+                }
+                Err(error) => panic!("Embedded task did not respond: {error}"),
+            }
         }
+    }
+    fn step(worker: &Worker, epoch: &str, profile: &str, id: u64) -> (Reply, Telemetry, f64) {
+        let rgb: Vec<_> = [195_u8, 80, 57]
+            .into_iter()
+            .cycle()
+            .take(128 * 96 * 3)
+            .collect();
+        let request = Step::new(epoch.into(), id, id * 4, 1, profile.into(), &rgb);
+        worker.send(Command::Step(request)).unwrap();
+        match receive(worker) {
+            Event::Action {
+                reply,
+                telemetry,
+                ms,
+            } => (reply, telemetry, ms),
+            _ => panic!("Expected an action"),
+        }
+    }
+
+    #[test]
+    #[ignore = "loads the complete embedded model on Metal; run with --release --ignored"]
+    fn embedded_task_replays_checkpoint() {
+        let root = std::env::temp_dir().join(format!("fly-embedded-task-{}", std::process::id()));
+        let worker = Worker::launch(&root, "verification").unwrap();
+        let profile = match receive(&worker) {
+            Event::Loaded { profile, telemetry } => {
+                assert_eq!(telemetry.nodes, 164606);
+                assert_eq!(telemetry.edges, 25558671);
+                crate::tutorial_demo::ColorDemos::load(&profile, telemetry.anatomy_activity.len())
+                    .unwrap();
+                profile
+            }
+            _ => panic!("Expected model loading"),
+        };
+        let epoch = "a".repeat(32);
+        worker
+            .send(Command::Restore {
+                epoch: epoch.clone(),
+                name: "initial".into(),
+            })
+            .unwrap();
+        assert!(matches!(
+            receive(&worker),
+            Event::Restored {
+                tick: 0,
+                step_id: 0,
+                ..
+            }
+        ));
+        let mut latencies = Vec::new();
+        for id in 0..4 {
+            let (_, telemetry, ms) = step(&worker, &epoch, &profile, id);
+            assert_eq!(telemetry.ticks, (id + 1) * 2);
+            latencies.push(ms);
+        }
+        worker
+            .send(Command::Snapshot {
+                epoch: epoch.clone(),
+                name: "retreat".into(),
+            })
+            .unwrap();
+        assert!(matches!(receive(&worker), Event::Saved { tick: 16, .. }));
+        let expected = step(&worker, &epoch, &profile, 4);
+        assert_eq!(expected.1.motor_mode, "retreat");
+        let next_epoch = "b".repeat(32);
+        worker
+            .send(Command::Restore {
+                epoch: next_epoch.clone(),
+                name: "retreat".into(),
+            })
+            .unwrap();
+        assert!(matches!(
+            receive(&worker),
+            Event::Restored {
+                tick: 16,
+                step_id: 4,
+                ..
+            }
+        ));
+        let replay = step(&worker, &next_epoch, &profile, 4);
+        assert_eq!(
+            serde_json::to_value(&expected.0.action).unwrap(),
+            serde_json::to_value(&replay.0.action).unwrap()
+        );
+        assert_eq!(
+            serde_json::to_value(&expected.1).unwrap(),
+            serde_json::to_value(&replay.1).unwrap()
+        );
+        for id in 5..105 {
+            let (_, telemetry, ms) = step(&worker, &next_epoch, &profile, id);
+            assert_eq!(telemetry.ticks, (id + 1) * 2);
+            latencies.push(ms);
+        }
+        latencies.sort_by(f64::total_cmp);
+        let report = serde_json::json!({
+            "embedded_model": true, "background_thread": true,
+            "tutorial_valid": true, "checkpoint_replay_exact": true,
+            "decisions": latencies.len() + 2, "profile_sha256": profile,
+            "latency_ms": {"median":latencies[latencies.len()/2], "p95":latencies[latencies.len()*95/100], "max":latencies.last()},
+        });
+        std::fs::write(
+            root.join("verification.json"),
+            serde_json::to_vec_pretty(&report).unwrap(),
+        )
+        .unwrap();
+        println!("{}\n{}", root.display(), report);
+        drop(worker);
+        let since = Instant::now();
+        while ACTIVE_TASK.load(Ordering::Acquire) && since.elapsed() < Duration::from_secs(3) {
+            thread::sleep(Duration::from_millis(2));
+        }
+        assert!(
+            !ACTIVE_TASK.load(Ordering::Acquire),
+            "Model task did not stop after drop"
+        );
     }
 }

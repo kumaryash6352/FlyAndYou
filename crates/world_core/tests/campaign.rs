@@ -4,7 +4,7 @@ fn brush(tool: Tool, x0: f64, x1: f64, y: f64, radius: f64) -> Stroke {
         tool,
         points: vec![[x0, y], [x1, y]],
         radius,
-        color: [232, 186, 60],
+        color: Some([232, 186, 60]),
     }
 }
 #[test]
@@ -149,7 +149,7 @@ fn complete_routes_use_real_live_brushes_and_collision_physics() {
         tool: Tool::Solid,
         points: vec![[288., 180.], [288., 264.]],
         radius: 12.,
-        color: [0; 3],
+        color: Some([0; 3]),
     };
     w.edit_live(&wall, false).unwrap();
     travel(&mut w, 0.52, |w| w.actor.x > 265. && w.actor.vx == 0.);

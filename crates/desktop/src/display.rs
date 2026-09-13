@@ -27,9 +27,8 @@ pub fn configure(ctx: &Context) {
 fn button(ui: &mut Ui, s: &str, selected: bool) -> Response {
     ui.add(Button::new(s).selected(selected))
 }
-pub(crate) fn fly(p: &Painter, c: Pos2, scale: f32, tick: u64, vx: f64, falling: bool) {
+pub(crate) fn fly(p: &Painter, c: Pos2, scale: f32, tick: u64, _vx: f64, falling: bool) {
     let flap = (tick / 3) % 3;
-    let facing = if vx < -0.01 { -1. } else { 1. };
     let leg = (tick / 5) % 2;
     let shapes = [
         (-4., 1., 6., 5.),
@@ -49,7 +48,7 @@ pub(crate) fn fly(p: &Painter, c: Pos2, scale: f32, tick: u64, vx: f64, falling:
         };
         let x = -1. + side * 2.;
         let r = Rect::from_min_size(
-            c + vec2(x * facing * scale, yy * scale),
+            c + vec2(x * scale, yy * scale),
             vec2(3. * scale, 5. * scale),
         );
         p.rect_filled(r, 0, Color32::from_rgb(201, 211, 190));
@@ -60,10 +59,7 @@ pub(crate) fn fly(p: &Painter, c: Pos2, scale: f32, tick: u64, vx: f64, falling:
     }
     for (x, y, w, h) in shapes {
         p.rect_filled(
-            Rect::from_min_size(
-                c + vec2(x * facing * scale, y * scale),
-                vec2(w * scale * facing.abs(), h * scale),
-            ),
+            Rect::from_min_size(c + vec2(x * scale, y * scale), vec2(w * scale, h * scale)),
             0,
             ink,
         );
@@ -76,10 +72,7 @@ pub(crate) fn fly(p: &Painter, c: Pos2, scale: f32, tick: u64, vx: f64, falling:
         p.line_segment([end, end + vec2(-1.5 * scale, 0.)], Stroke::new(scale, ink));
     }
     p.rect_filled(
-        Rect::from_min_size(
-            c + vec2(4. * facing * scale, 1. * scale),
-            vec2(scale, scale),
-        ),
+        Rect::from_min_size(c + vec2(4. * scale, 1. * scale), vec2(scale, scale)),
         0,
         Color32::from_rgb(103, 68, 49),
     );
@@ -280,8 +273,8 @@ impl Desktop {
                     for c in [[232,186,60],[195,80,57],[94,132,164],[92,119,72],[43,46,39]] {
                         let (r,res) = ui.allocate_exact_size(vec2(19.,19.),Sense::click());
                         ui.painter().rect_filled(r.shrink(2.),0,Color32::from_rgb(c[0],c[1],c[2]));
-                        if self.color == c { ui.painter().rect_stroke(r,0,Stroke::new(1.,Color32::WHITE),StrokeKind::Inside); }
-                        if res.clicked() && first { self.color = c; }
+                        if self.color == Some(c) { ui.painter().rect_stroke(r,0,Stroke::new(1.,Color32::WHITE),StrokeKind::Inside); }
+                        if res.clicked() && first { self.select_color(c); }
                         res.on_hover_text(match c {
                             [232,186,60] => "Yellow",
                             [195,80,57] => "Red",
@@ -290,6 +283,7 @@ impl Desktop {
                             _ => "Black",
                         });
                     }
+                    if button(ui, "×", self.color.is_none()).on_hover_text("No color. Ground stays neutral; Ink needs a color. Click a selected swatch again to clear it.").clicked() && first { self.color = None; }
                     ui.add(Slider::new(&mut self.radius, if self.tool.solid() { 4.0..=24.0 } else { 1.0..=24.0 }).show_value(false).text("size"));
                 });
                 ui.horizontal(|ui| {
@@ -313,9 +307,21 @@ impl Desktop {
                 if self.help {
                     ui.separator();
                     ui.label("Drag: draw · Space: run / pause · 1–4: tools");
+                    ui.label("Color → Ink. Click again or × to clear.");
+                    ui.label("Ground uses your color. Empty-space Ink colors both side walls.");
                     ui.label("Cmd/Ctrl Z: undo · Shift Cmd/Ctrl Z: redo");
                     ui.label("R: reset · F5 / F9: save / restore · N: next level");
                     if ui.add_enabled(ready && !self.tutorial.active(), Button::new("Replay intro")).clicked() && first { self.replay_tutorial(); }
+                    ui.collapsing("Credits / licenses", |ui| {
+                        ui.label("MaleCNS v1.0 connectivity and anatomy: FlyEM / HHMI Janelia, University of Cambridge, MRC Laboratory of Molecular Biology, and Google Research.");
+                        ui.hyperlink_to("MaleCNS dataset", "https://male-cns.janelia.org/download/");
+                        ui.hyperlink_to("CC BY 4.0", "https://creativecommons.org/licenses/by/4.0/");
+                        ui.label("The game filters and normalizes the graph, approximates transmitter signs, and adds artificial visual and motor mappings. The sampled anatomy display and neural activity are transformed for the game.");
+                        ScrollArea::vertical().id_salt("credits").max_height(180.).show(ui, |ui| {
+                            ui.label(crate::THIRD_PARTY_NOTICES);
+                            ui.label(crate::CANDLE_LICENSE);
+                        });
+                    });
                 }
                 if self.details {
                     ui.separator();
@@ -457,10 +463,9 @@ impl Desktop {
         if let Some(s) = self.stroke.as_ref() {
             let c = if s.tool.erase() {
                 Color32::from_rgba_unmultiplied(245, 242, 225, 160)
-            } else if s.tool.solid() {
-                Color32::from_rgba_unmultiplied(120, 124, 94, 150)
             } else {
-                Color32::from_rgba_unmultiplied(s.color[0], s.color[1], s.color[2], 130)
+                let [r, g, b] = s.color.unwrap_or([120, 124, 94]);
+                Color32::from_rgba_unmultiplied(r, g, b, 150)
             };
             let pts: Vec<Pos2> = s
                 .points
@@ -534,7 +539,8 @@ impl Desktop {
         ) && self.sim.world.outcome == Outcome::Running
             && !self.saving
             && self.restore_name.is_none()
-            && self.tutorial.can_paint();
+            && self.tutorial.can_paint()
+            && (self.tool != Tool::Ink || self.color.is_some());
         // Consume the ordered events, including the press position. Sampling
         // only PointerState::interact_pos loses fast drags contained in one frame.
         for event in ctx.input(|i| i.events.clone()) {
@@ -550,8 +556,9 @@ impl Desktop {
                     && rect.contains(pos)
                     && ctx.layer_id_at(pos) == Some(ui.layer_id()) =>
                 {
+                    let finishing_intro = self.tutorial.active();
                     if self.tutorial.begin_paint() {
-                        self.log(serde_json::json!({"event":"tutorial_complete","physics_tick":self.sim.world.tick}));
+                        self.log(serde_json::json!({"event":if finishing_intro { "tutorial_complete" } else { "first_paint" },"level":self.sim.world.level+1,"physics_tick":self.sim.world.tick}));
                     }
                     self.edit_notice = None;
                     self.gesture += 1;

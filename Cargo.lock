@@ -2858,6 +2858,8 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_egui",
+ "brain_core",
+ "fly-brain-worker",
  "getrandom 0.3.4",
  "rodio",
  "serde",

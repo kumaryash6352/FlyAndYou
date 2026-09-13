@@ -76,7 +76,13 @@ fn mean(a: &[f32], indices: &[usize]) -> f32 {
 }
 impl Brain {
     pub fn load(root: &Path, cpu: bool) -> Result<Self, String> {
-        let profile = Profile::load(root)?;
+        Self::from_profile(Profile::load(root)?, cpu)
+    }
+    #[cfg(feature = "embedded-model")]
+    pub fn embedded(cpu: bool) -> Result<Self, String> {
+        Self::from_profile(Profile::embedded()?, cpu)
+    }
+    fn from_profile(profile: Profile, cpu: bool) -> Result<Self, String> {
         let compute = Compute::new(&profile, cpu)?;
         let identity = serde_json::json!({"prepared":profile.hash,"backend":compute.name(),"sources":source_hashes(),"candle":"0.11.0","protocol":wire_types::PROTOCOL_VERSION});
         let profile_hash =

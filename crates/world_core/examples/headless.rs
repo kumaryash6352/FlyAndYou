@@ -32,7 +32,7 @@ fn main() {
                         tool,
                         points,
                         radius: r["radius"].as_f64().unwrap_or(24.),
-                        color: [232, 186, 60],
+                        color: Some([232, 186, 60]),
                     })?;
                 }
                 "observe" => {}

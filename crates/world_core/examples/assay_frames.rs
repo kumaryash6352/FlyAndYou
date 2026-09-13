@@ -12,7 +12,7 @@ fn main() {
                 tool: Tool::Ink,
                 points: vec![[wx, y]],
                 radius: 24.,
-                color: [232, 186, 60],
+                color: Some([232, 186, 60]),
             })
             .unwrap();
             std::fs::write(root.join(format!("cue-{i}-{j}.rgb")), w.observe()).unwrap();

@@ -1,3 +1,6 @@
+pub const THIRD_PARTY_NOTICES: &str = include_str!("../../../THIRD_PARTY_NOTICES.md");
+pub const CANDLE_LICENSE: &str = include_str!("../../../third_party/CANDLE-LICENSE-APACHE");
+
 mod app;
 mod brain_view;
 mod campaign_view;
@@ -15,20 +18,13 @@ use app::Desktop;
 use bevy::prelude::*;
 use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass};
 pub(crate) fn workspace_root() -> std::path::PathBuf {
+    // Normal launches never probe the development checkout or protected Documents.
+    // An explicit override keeps local journals convenient while assets stay embedded.
     std::env::var_os("FLY_AND_YOU_ROOT")
         .map(std::path::PathBuf::from)
-        .or_else(|| {
-            let exe = std::env::current_exe().ok()?;
-            let root = exe.ancestors().nth(4)?;
-            root.join("Cargo.toml")
-                .is_file()
-                .then(|| root.to_path_buf())
-        })
         .unwrap_or_else(|| {
-            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("../..")
-                .canonicalize()
-                .unwrap()
+            std::path::PathBuf::from(std::env::var_os("HOME").expect("macOS home directory"))
+                .join("Library/Application Support/FlyAndYou")
         })
 }
 pub fn game_main() {
@@ -82,16 +78,5 @@ fn draw(
 }
 
 pub fn trailer_main() {
-    // Do not probe Documents before the trailer can show its loading screen.
-    let root = std::env::var_os("FLY_AND_YOU_ROOT")
-        .map(std::path::PathBuf::from)
-        .unwrap_or_else(|| {
-            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-                .parent()
-                .unwrap()
-                .parent()
-                .unwrap()
-                .to_path_buf()
-        });
-    trailer::run(root);
+    trailer::run(workspace_root());
 }

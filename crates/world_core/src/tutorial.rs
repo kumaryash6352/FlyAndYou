@@ -8,7 +8,7 @@ pub fn tutorial_cue(color: [u8; 3]) -> World {
             tool: Tool::Solid,
             points: vec![[100., 248.], [100., 284.]],
             radius: 8.,
-            color,
+            color: None,
         })
         .expect("tutorial post is outside Fly and protected terrain");
     world
@@ -16,7 +16,7 @@ pub fn tutorial_cue(color: [u8; 3]) -> World {
             tool: Tool::Ink,
             points: vec![[100., 248.], [100., 284.]],
             radius: 16.,
-            color,
+            color: Some(color),
         })
         .expect("tutorial surface accepts ink");
     world
