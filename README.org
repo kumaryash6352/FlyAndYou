@@ -13,3 +13,6 @@ With the local dependencies prepared:
 ./scripts/run.sh
 #+end_src
 
+Once loading finishes, press *Enter* to start the tutorial. The opening screen waits until you're ready to record; *Replay intro* returns to it for another take.
+
+Six puzzles are available in the toolbox level chooser. After a win, press *N* for the next level. Later levels start paused; *Space* runs or pauses, and *R* resets the current level.

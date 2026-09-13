@@ -1,0 +1,1400 @@
+#+title: Zero-Player Platformer
+#+subtitle: Implementation guide — draw a route, then convince the fly to take it
+#+author: Technical design draft
+#+date: 12 September 2026
+#+language: en
+#+options: toc:3 num:t ^:nil
+#+property: header-args :eval never-export :exports code :mkdirp yes :tangle no
+#+startup: overview
+
+* Refinement: predictable chromatic movement
+
+The approved controller rule is now *yellow attracts; red repels*. The =eye-level-v2 / ChromaticValenceV1= profile uses two engineered sensory channels and actual postsynaptic relay populations with a fixed neutral calibration. A movement state machine chooses approach, committed retreat, search, or hold. Retreat lasts eight decisions; separate trigger and rearm thresholds prevent rapid reversals. Search commitments remain distinct from retreat. Body acceleration supplies velocity smoothing; the renderer, physics constants, image-only action path, and five-neural/ten-physics timing contract remain intact. Joint bookmarks include all motor state. The floating toolbox displays the movement decision and neural yellow/red evidence. These explicit game associations supersede the earlier single warm-color attraction readout.
+
+* Refinement: live rescue play and minimal framing
+
+The latest user direction supersedes the earlier presentation and edit-pausing policy. The application now fills the window with the game and two right-hand views. One floating egui toolbox also supplies the tutorial. Drawing stays live: rough brush fragments commit at decision boundaries, skip protected/actor-overlapping cells, and combine into one undo transaction per gesture. The default spectator camera fills the game pane and follows travel; the toolbox can show the whole map.
+
+The fly's maximum speed is now 176 px/s (previously 48), with faster acceleration and falling. The neural/physics timing contract is retained pending discussion of backend or scheduling changes. The brain panel uses 336 real MaleCNS skeleton samples with corresponding modeled activity, rendered in two scan-like projections. It is not a medical CT scan or a fabricated pulse animation. Previous slower native-play timings are historical.
+
+The latest =eye-level-v2= view starts entirely grayscale to the fly. Ink can color terrain and physical objects, including a modeled flag with a cylindrical pole and billowing cloth; it cannot hang in empty space. Paint appears on the corresponding 3D surfaces, never on the neutral corridor backdrop. The 2D editor retains its art colors. These rules supersede the earlier wall-texture description below.
+
+Uneven solid terrain now lines the left, right, and top map edges, forming walls and a ceiling. Its physical surfaces, including protected border pixels, accept ink; the original terrain geometry stays fixed. The bottom gap remains open and hazardous.
+
+* Earlier implementation notes — 12 September 2026
+
+The remainder of this document is the supplied design guide. The user subsequently requested Bevy with bevy-egui, restrained testing with emphasis on feel, a literal tiny fly with rough pixel art, and *eye-level 3D perspective vision along the fly's direction of travel while the editor remains a 2D plane*. Those requests supersede the original cutaway camera and its assumptions below.
+
+The implemented app uses Bevy 0.19.1 / bevy-egui 0.42.0 and a CPU =eye-level-v1= perspective renderer. Terrain is extruded across a 64-unit corridor; the canonical player pixels texture the corridor walls and block surfaces. The 128 x 96 camera has a 110-degree horizontal field of view, turns with travel, and applies geometric occlusion. Spectator zoom, the actor sprite, and UI never enter its image.
+
+The full selected MaleCNS traced graph drives an explicitly approximate leaky rate model, rather than the proposed LIF dynamics below. The retina uses a disclosed stratified mapping where anatomical receptor coordinates are unavailable. A fixed bilateral salience readout controls forward movement and turns to search after 3.5 simulated seconds without sufficient response. Learning is off; this is an engineered motor interface over connectome-derived activity.
+
+One native playthrough with a drawn bridge and broad yellow trail reached the flag in 10.5 simulated seconds. The saved world has =outcome: Won= at tick 1050. This is an implementation/play check, not a multi-user usability result. The historical cutaway cue assay does not establish performance for the new camera. See =README.md= for launch instructions, controls, and current limits.
+
+* Executive decision and delivery boundary
+:PROPERTIES:
+:CUSTOM_ID: executive-decision
+:END:
+
+Build a local, single-screen 2D platformer. The human cannot move the character. They edit solid terrain and visible stimuli using a Paint-like toolbar. A MaleCNS-derived controller receives a deliberately defined view of the world and supplies movement. The human's objective is to bring the character into the goal region; the controller receives neither the goal's coordinates nor a path to it.
+
+*The core demonstration is a bridge plus a lure: construction makes a route possible, and a measured sensory response makes the character more likely to choose it.* Neither behavior should be faked by a hidden waypoint system.
+
+This guide chooses a concrete implementation rather than leaving every subsystem open:
+
+| Area | Proposed implementation |
+|------+-------------------------|
+| Desktop application | Rust, Bevy 0.19.1, 2D rendering and UI |
+| World simulation | Small engine-independent Rust library; raster terrain; kinematic axis-aligned body |
+| Neural worker | Separate Python 3.12 process; NumPy/SciPy CPU baseline |
+| Communication | Framed JSON over localhost TCP; RGB8 frames encoded as base64 |
+| Controller timing | Five 20 ms neural steps per observation, then ten 10 ms world steps |
+| MVP editing | Pause at a decision boundary while committing a stroke; resume afterward |
+| Neural behavior | Fixed controller/checkpoint first; learning is a separate, optional mode |
+| Evidence | Identical-state comparisons, input disconnection, replay, and behavior-level tests |
+
+Bevy 0.19.1 is the version shown by the documentation checked for this guide. Pin it instead of following the moving =latest= documentation during implementation.[fn:bevy] These stack choices are recommendations, not previously established user decisions. A browser or another renderer can replace the desktop front end while retaining the contracts below.
+
+** What is included here
+
+This is an implementation guide, not a completed game. The accompanying bundle contains the guide, an offline-readable HTML export, proposed configuration and level fixtures, and independently authored Python contract examples with a test suite.
+
+The reference suite was executed locally: *30 tests passed*. It checks rasterization, atomic terrain edits, sensory cropping, packet framing, request/action matching, and a statistical helper. It does *not* implement or validate the full physics engine, UI, neural worker, complete scheduler, or a trained fly. No upstream fly simulator was executed or benchmarked. The Rust declarations and planned commands below are implementation specifications, not compiled results.
+
+** Scope that must survive cuts
+
+Keep one usable level, solid and visual brushes, separate erasers, a reliable pause/reset, an honest controller-mode badge, a sensory inspector, and a genuinely stimulus-responsive neural path.
+
+Cut online learning, precise jumps, multiple levels, reward collectibles, general rigid-body physics, a 3D brain visualization, and elaborate asset generation before cutting those essentials. Use original simple artwork; do not make Nintendo assets, an emulator, a ROM, a remote service, or specialty hardware a dependency.
+
+* Product contract
+:PROPERTIES:
+:CUSTOM_ID: product-contract
+:END:
+
+** The player loop
+
+The player observes the fly, draws or erases something, watches the consequence, and revises the environment. A successful level requires both physical access and an effective intervention in the controller's observations.
+
+There is no click-to-move command. A stimulus contains pixels, not a destination. A painted coin is not automatically a reward. The goal flag is visible scenery and a host-side overlap condition, not privileged information supplied to the worker.
+
+Allow ordinary curiosity and imperfect drawings. Do not classify a doodle and replace it with a cleaner semantic object. The interesting question is whether the controller responds to what the player actually drew.
+
+** Non-negotiable invariants
+
+1. The controller's action path is =world pixels -> sensory encoding -> neural activity -> declared readout -> body=.
+2. The worker's play-step API contains no actor/world coordinates, target IDs, collision map, tool name, shortest path, goal distance, or object class labels. The host may use position to construct the sensory image, but does not transmit it.
+3. The same canonical world composition supplies the visible level and the worker's observations. HUD, cursor, selection handles, interpolation, and spectator zoom are added only afterward.
+4. Terrain edits never teleport, shove, or lift the actor by creating an overlapping solid. The player can remove support and cause a fall.
+5. Learning is disabled during ordinary puzzle attempts. A reset restores the declared neural state, not merely the character position.
+6. Changing controller implementations never happens silently. A fixture or analytic baseline remains conspicuously labeled and cannot satisfy the neural milestone.
+7. A stalled worker stalls simulation progress. It does not cause the character to continue indefinitely on its last action.
+
+** Honest claim ladder
+
+| Implemented boundary | Permissible description |
+|----------------------+-------------------------|
+| Synthetic or brightness-following fixture | Drawing/physics prototype; not a neural fly |
+| MaleCNS wiring, chosen dynamics, fixed I/O | Connectome-derived controller with engineered senses and motor interface |
+| Fixed graph plus a trained downstream readout | Learned readout over connectome-model activity |
+| Declared internal synapses change under a tested rule | A specified plasticity model acquired the demonstrated association |
+
+None of these descriptions establishes a living reconstructed fly, consciousness, biological understanding of coins, or physiological fidelity. MaleCNS supplies a connectivity dataset; the closed-loop behavior still depends on modeling choices.[fn:malecns]
+
+* Implementation gates: keep the game and the evidence separate
+:PROPERTIES:
+:CUSTOM_ID: gates
+:END:
+
+| Gate | Required evidence | What a failure means |
+|------+-------------------+----------------------|
+| G0 — world | A scripted test actor crosses a hand-drawn bridge; visual ink never adds collision | Fix geometry before involving the brain |
+| G1 — neural sensitivity | Different image sequences produce different downstream activity/actions with matched state; disconnected input removes image dependence | The sensory path is absent, saturated, or incorrectly mapped |
+| G2 — usable influence | Cue placement causes repeatable directional movement toward or away from that cue, across randomized sides and states | Mere sensitivity is not usable steering |
+| G3 — puzzle interaction | Real users can solve the one-screen level through drawing, with the neural controller active | The behavior may be real but the game is not yet readable or enjoyable |
+| G4 — learning, optional | A declared learned parameter block improves held-out behavior and passes appropriate controls | Ship fixed behavior; do not claim learning |
+
+G1 is weaker than G2. A visual edit that changes a spike count proves neither attraction nor coin recognition. A cue that consistently causes movement in the wrong direction can still be usable as a measured avoidance cue; label the observed behavior rather than inventing a biological explanation.
+
+Build G0 and the G1/G2 assay in parallel. Do not wait for a polished editor to discover that the neural controller cannot be influenced. Equally, do not reject the entire game just because online learning fails: a useful fixed checkpoint is sufficient for the core concept.
+
+* Repository and ownership boundaries
+:PROPERTIES:
+:CUSTOM_ID: repository
+:END:
+
+The following is the *target repository layout*. Only =reference/=, =config/=, =levels/=, and guide/report files are supplied in this bundle; the application modules are to be implemented.
+
+#+begin_example
+zero-player/
+  Cargo.toml
+  Cargo.lock
+  crates/
+    world_core/src/
+      lib.rs              # public World/Actor/Level interfaces
+      terrain.rs          # immutable and player collision grids
+      strokes.rs          # quantized stroke rasterization and deltas
+      body.rs             # kinematic actor, collision, step-up
+      sensory.rs          # canonical RGB composition and crop
+      level.rs            # bounded level loader and invariants
+      checkpoint.rs       # world snapshots and replayable edits
+    desktop/src/
+      main.rs
+      coordinator.rs      # boundary/worker/apply/pause state machine
+      canvas.rs           # pointer capture, previews, zoom transform
+      toolbar.rs          # draw/erase/pause/reset controls
+      display.rs          # textures, sprite and interpolation
+      inspector.rs        # actual sensor input, readout and timing
+      worker_client.rs    # bounded TCP I/O on a background thread
+    wire_types/src/lib.rs # strict serde structures and version checks
+  controller/brainworker/
+    service.py            # serialized command dispatcher
+    protocol.py           # framing and validation
+    graph.py              # verified cached graph loader
+    retina.py             # explicit CropRetinaV1 projection
+    dynamics.py           # chosen sparse neural dynamics
+    readout.py            # fixed or learned downstream interface
+    state.py              # full checkpoint save/restore
+  experiments/
+    cue_assay.py          # fixed-state and closed-loop cue experiments
+    generalization.py     # shape/color/side controls
+    classroom.py          # optional controlled training
+  assets/                 # original sprites, palette, sounds
+  data/source.lock.json    # URLs, versions, digests, import rules
+  profiles/               # approved runtime profiles and frozen weights
+  levels/
+  tests/                  # Rust integration tests and neural tests
+  reference/              # supplied small executable specifications
+  runs/                   # generated journals/checkpoints; not source
+#+end_example
+
+Keep the world library independent of Bevy. It should accept an =Action= and a fixed number of ticks without opening a window. The desktop owns presentation, the worker owns model state, and the coordinator owns the ordering between them.
+
+For three people, assign world/physics, neural worker/assays, and editor/coordinator/integration as independent initial workstreams. Agree on the packet and snapshot identities first. Everyone should be able to run the same fixture-based integration path before the full graph is ready.
+
+** Bootstrap decisions
+
+Use =bevy = { version = "=0.19.1", default-features = false, features = ["2d", "ui"] }= for the proposed desktop. Add audio only after the core works. Record the actual Rust toolchain and commit the resolved =Cargo.lock=. Pin a Python 3.12 environment and an exact resolved dependency lock after verifying importability on the target laptop; do not combine one upstream project's environment with another's by guesswork.
+
+The reviewed Fly64 requirements declare NumPy, SciPy, PyArrow, pandas, websockets and pytest ranges. They are useful dependency information, not a ready-made lock for this project.[fn:flydeps] This guide does not ship an untested Python dependency lock pretending to be a certified environment.
+
+* World model, units, and layers
+:PROPERTIES:
+:CUSTOM_ID: world-model
+:END:
+
+Use a =640 x 360= logical-pixel world. Increasing the desktop window size scales presentation; it does not change the simulation. World coordinates have the origin at the top left, +x to the right, and +y downward. A Bevy world transform is therefore a presentation conversion, not the canonical state.
+
+Collision cells are =4 x 4= logical pixels, producing a =160 x 90= binary grid. Stroke coordinates are quantized to =1/256= logical pixel. Use signed integers for the rasterization calculations and sufficiently wide intermediates (=i128= for the capsule predicate). Actor position and velocity may use =f64= initially; only same-build/same-platform deterministic replay is a target, not portable bitwise reproducibility.
+
+| Layer | Editable? | Collision? | Included in controller view? |
+|-------+-----------+------------+------------------------------|
+| Background | No | No | Yes |
+| Base terrain | No | Yes | Yes |
+| Player solid grid | Yes | Yes | Yes, rendered from the exact grid |
+| Visual paint RGBA8 | Yes | No | Yes |
+| Original hazards/props | No for MVP | Declared per type | Yes |
+| Goal artwork | No | Trigger only | Yes, with no semantic label |
+| Fly sprite | No | Separate kinematic body | No |
+| Editor/HUD/preview | UI only | No | Never |
+
+Collision occupancy is =base_solid OR player_solid=. Never infer it from the color of the visible texture. Conversely, solid terrain must be drawn from this occupancy grid rather than from a smoother unrelated mesh. A visual drawing may resemble a platform without being solid; the tool label and preview must make that difference clear.
+
+Store visual paint as an independent RGBA8 raster. Use opaque palette colors or fully transparent erasure in the MVP; defer pressure, blend modes, antialiasing, and translucent physics. For simplicity, visual paint is a cutaway-world decal drawn over terrain. Thus color edits can conceal terrain's appearance but never remove its collision; a held collision-overlay key makes the physical layer inspectable.
+
+The default sensory world contains no transient shadows, camera shake, animation-based screen flashes, or victory confetti. Cosmetic effects belong to the spectator layer unless deliberately registered as a sensory stimulus.
+
+* Paint tools and transactional editing
+:PROPERTIES:
+:CUSTOM_ID: editing
+:END:
+
+** Coordinate conversion and continuous strokes
+
+Convert pointer coordinates through the inverse canvas pan/zoom transform into logical world coordinates, then quantize. A pointer down over the toolbar does not start a stroke. Capture the pointer for the duration of a stroke and cancel the preview on focus loss or Escape. Clamp the displayed preview to the canvas, but do not wrap coordinates.
+
+Represent a freehand stroke as an ordered polyline with a radius. Rasterize the union of capsules along every adjacent pair of points. Do not stamp independent discs only at received mouse events: fast movement otherwise leaves holes, and results depend strongly on event rate.
+
+For a cell center P and segment A→B, include the cell when the squared distance to the segment is at most the squared radius. The supplied =capsule_cells= example evaluates the interior-segment case without division using =cross(P-A, B-A)^2 <= r^2 * |B-A|^2=. Endpoint tests handle the two caps. Collinear resampling leaves the covered set unchanged; an actually different curved polyline is not required to do so.
+
+Solid brush radii are initially 4–24 logical pixels. Visual brush radii are 1–24 pixels. Rasterize solids at 4-pixel cell centers and visual ink at 1-pixel centers. Limit a stroke to 2,048 quantized samples, resampling an overlong pointer stream by a documented spacing rule rather than silently dropping its tail.
+
+** Commit protocol
+
+The MVP pauses on pointer down. The coordinator completes the current decision block and enters a stable boundary; previews may be drawn immediately, but no preview enters physics or the sensory image. On pointer up, validate the entire proposed change against that boundary state and commit once. If the player was running beforehand, resume. A manually paused player remains paused.
+
+Validation is all-or-nothing:
+
+1. Bounds, radius, palette and point-count checks pass.
+2. Base terrain is immutable; attempts to edit its collision cells are ignored.
+3. Changed mutable cells do not intersect a protected region.
+4. Added solid cells do not overlap the actor AABB inflated by four logical pixels at commit time.
+5. The resulting masks remain binary and dimensions do not change.
+
+Do not move the actor out of an invalid stroke to make it fit. Reject it with a visible reason. Erasing support is allowed and gravity takes effect after resumption. The same guard applies when undo restores an erased solid: undo is not permission to materialize a wall inside the actor.
+
+** Undo, reset, and live editing are different operations
+
+Store changed indices and their before/after values per transaction. Undo/redo changes terrain or paint only, at a paused boundary, with current-state validation. It does not restore neural history, randomness, body position, or earlier observations. A reset restores the full checkpoint. The UI must not conflate the two.
+
+Each committed change increments =world_revision=. Empty/no-op strokes do not create revisions. Store exact deltas in the journal; rendering a smoothed approximation for replay is not enough.
+
+Continuous editing while the actor moves is a later mode: split a held stroke into bounded transactions at decision boundaries, validating each against the current actor. Do not introduce it until paused editing, revision matching, and replay are reliable.
+
+* Kinematic platformer physics
+:PROPERTIES:
+:CUSTOM_ID: physics
+:END:
+
+A full rigid-body solver is unnecessary for one walking actor and static painted terrain. Begin with an axis-aligned body, radius-free collisions, bounded velocity, and a conventional step-up rule. A later engine integration may replace this implementation behind the same world API.
+
+Proposed tunables, not measured biological parameters:
+
+| Quantity | Default |
+|----------+---------|
+| Physics step | 0.01 simulated seconds |
+| Body half-width / half-height | 6 / 8 logical pixels |
+| Maximum horizontal speed | 48 pixels/second |
+| Horizontal acceleration magnitude | 240 pixels/second² |
+| Gravity | 360 pixels/second² downward |
+| Terminal downward speed | 180 pixels/second |
+| Optional jump impulse | 144 pixels/second upward |
+| Maximum automatic step-up | 4 pixels |
+| Maximum collision substep displacement | 2 pixels |
+
+For each fixed physics tick, approach =steer * max_speed= with the acceleration cap, apply gravity, clamp falling speed, and compute displacement. Divide it into enough substeps that neither axis moves more than two pixels per substep. Resolve x, then y against occupied cells. Stop at the first contact plane rather than advancing into the obstacle and ejecting the body afterward.
+
+Use half-open AABBs: touching a cell boundary is not penetration. Check all cells crossed by a swept axis move and clamp to the nearest blocking face. Recompute support below the feet after resolution. Out-of-world space blocks sideways escape; falling into a hazard or beyond the lower kill boundary fails the attempt. Hazards win over a simultaneous goal overlap so a dying actor cannot also trigger victory.
+
+A four-pixel step-up is permitted only when the actor was supported, horizontal movement is blocked, the raised body and vertical lifting path are clear, and the intended horizontal move at that raised height is clear. Then test support. This is an explicit avatar assist that makes raster ramps usable; it is not a neural decision or a fly-biomechanics claim. Do not add auto-turning at cliffs, homing, or path following.
+
+Jump is disabled in the first level. When enabled later, a =jump=true= action is an edge-triggered request consumed on the first physics tick of that decision block. Accept it only while grounded; reject it otherwise. Do not hold the request until a later landing, and do not launch again on every fixed step. Record requested and accepted jumps separately.
+
+At the proposed defaults, the ideal no-collision jump height would be =v²/(2g) = 28.8 px= and equal-height flight time =2v/g = 0.8 s=. These are analytic design estimates. Discrete collision handling and acceleration affect actual trajectories; test the implementation rather than treating these estimates as measured reachability.
+
+** Required physics fixtures
+
+A one-cell wall must stop a falling or moving body at the maximum permitted velocity. A one-cell staircase must be climbable with step-up enabled and blocked when disabled. A low ceiling must prevent step-up. Erasing the supporting cell must cause a fall. An illegal stroke must leave both actor and world unchanged. The supplied reference tests cover edit guards, not these unimplemented physics behaviors.
+
+* Sensory rendering: make the input inspectable
+:PROPERTIES:
+:CUSTOM_ID: sensory
+:END:
+
+** Cutaway-v1 profile
+
+Maintain a canonical actor-free RGB8 composition of the logical world on the CPU. At a decision boundary, crop a =256 x 192= region centered at the actor's floored logical position. Downsample to =128 x 96= using a deterministic 2×2 integer box average. Pad out-of-world pixels with RGB =(16,18,22)=. Do not include the actor sprite, editing preview, pointer, or inspector.
+
+The default is a local, orthographic, side-view cutaway sensor. It does not mirror with heading and does not raycast terrain occlusion. The model can see anything drawn within that rectangular cutaway, including a cue beyond an intervening wall. This is a deliberately engineered game observation, *not an anatomically accurate field of view*. If occlusion or heading-relative vision is added later, create a new sensor profile and invalidate incompatible checkpoints and calibration results.
+
+A 24-pixel-wide cue spans approximately 12 sensor pixels under this profile. Start with cues 24–48 pixels wide, not tiny coin icons that disappear in downsampling. Treat every size as a calibration choice; an arbitrary doodle has no guaranteed neural meaning.
+
+Keep the input's RGB encoding consistent between training and play. The baseline averages encoded RGB8 values for reproducibility, not calibrated photon counts. Changing to linear-light averaging is a sensor-version change, not a cosmetic renderer tweak.
+
+** Why CPU composition
+
+The scene is small and mostly raster data. CPU composition avoids GPU readback timing, row-stride surprises, and a second renderer that accidentally omits paint. Upload that same composition to a Bevy texture, then draw the actor and interface on top. Bevy provides a CPU drawing example and explicit main-world/render-world image storage options.[fn:cpu]
+
+Do not sample the displayed framebuffer. Spectator interpolation, window resizing, and UI changes must not alter controller observations. The inspector should show the exact transmitted image and its hash; a separately reconstructed preview can conceal bugs.
+
+** Retina mapping
+
+The game-frame crop is not directly interchangeable with Fly64's existing visual input. Its =SphericalRetina= takes a six-face cube atlas and samples an approximate eye geometry.[fn:retina] Passing a flat platformer crop into that function without changing the mapping is incorrect.
+
+Define =CropRetinaV1= explicitly. Give each selected visual input neuron a stable sample coordinate in the 128×96 image. Where using available optic-column assignments, preserve left/right identity and document how column coordinates are scaled onto the cutaway. For cells without resolved positions, record the fallback rule and count. Keep the neuron-ID-to-sample map in a hashed profile file.
+
+Visual currents should enter only the declared sensory neuron set. No object detector, coin coordinate, or mouse location feeds the motor layer. Image recognition in a separate assistant would change the central claim of this game.
+
+Test localized flashes and moving bars before testing coin-like shapes. Verify which mapped input cells respond, whether the response reaches the selected downstream populations, and whether it changes a physical action. A correct projection is necessary but not sufficient for usable behavior.
+
+* Neural backend and data preparation
+:PROPERTIES:
+:CUSTOM_ID: neural-backend
+:END:
+
+** Treat the simulator as an adapter boundary
+
+Use a =BrainBackend= abstraction with =load_profile=, =step_image=, =inspect=, =snapshot=, and =restore= operations. Keep transport, the platformer body, and the toolbar out of it. Do not start the Mario or Doom executables merely to get neural activity.
+
+The default path in this guide is an independent, minimal sparse simulator built from the official data, with a fixed readout first. An upstream implementation may be integrated instead when its source, dependencies, license, and state behavior have been checked. That swap does not change the game protocol.
+
+The following upstream locations were inspected as references; no repository was run here:
+
+| Reference | Useful boundary | Integration caution |
+|-----------+-----------------+---------------------|
+| Fly64 =fly64/model.py= | =FlyModel= state, image step, downstream readout | It combines retina, dynamics and decoder; separate those concerns for this game |
+| Fly64 =fly64/data.py= | Annotation filtering, graph orientation and sparse cache | Preserve provenance; do not silently change the retained population |
+| Fly64 =fly64/retina.py= | Explicit sensory projection | Its cube-atlas contract is not this game's cutaway image |
+| Fly64 =scripts/validate_causality.py= | Matched-state live/frozen/disconnected comparisons | A changed action stream is not proof of cue attraction[fn:causality] |
+| DOOMFLY | Provenance, experiment controls and explicit learning limitations | Do not inherit its entire game/deployment stack |
+
+Fly64 describes no trained objective in its current game controller.[fn:flyreadme] DOOMFLY reports that its current experimental candidate has not demonstrated learned survival and failed its stated validation gates.[fn:doom] Neither is evidence that importing the graph will produce a coin-seeking agent.
+
+The reviewed Fly64 =model.py= exposes mutable voltage, spike history, previous retinal samples, decoder smoothing and a random generator, all of which matter for reset.[fn:flymodel] Its importer is a separate module and records its filtering and cache metadata.[fn:flydata] These are source-level observations, not guarantees of correctness.
+
+** Source and license hygiene
+
+Download the official annotation, neurotransmitter, and aggregate connection tables. The official download page lists approximately 13 MB, 42 MB, and 1.1 GB respectively, and states that the dataset is CC-BY.[fn:downloads] Do not download full microscopy volumes or multi-gigabyte synapse-coordinate tables for this demo.
+
+Record source URLs, retrieval date, file hashes, dataset release, selected fields, filtering predicates, node-ordering policy, edge aggregation, and the resulting graph dimensions in =data/source.lock.json=. A hash you compute on first download records reproducibility; it is not an independently published authenticity check.
+
+Do not assume a public repository is licensed for vendoring. A reusable root license for Fly64 was not established in this review. Check that before copying its code; otherwise implement your own adapter/model against the published data and descriptions, or use explicitly licensed source within its stated scope. GitHub's documentation distinguishes public visibility from an explicit open-source license.[fn:license] Keep data attribution separate from code attribution, and retain notices for any components actually reused.
+
+** Import pipeline
+
+1. Read neuron annotations and choose the retained ID set according to an explicit profile. Sort unique IDs and save =ids.npy=. Count exclusions by reason.
+2. Resolve transmitter metadata and anatomical populations. Fail on missing required sets, rather than substituting arbitrary neurons while retaining a biological label.
+3. Stream aggregate edges in batches, keep only edges whose two endpoints are retained, and map IDs to compact indices. Never construct an N×N dense matrix.
+4. Store =W[post, pre]=: multiplication by a vector of presynaptic activity yields postsynaptic input. Verify orientation with a three-neuron chain before a full import.
+5. Define signed weights and normalization explicitly. Transmitter-to-sign assignment is a modeling approximation; it is not uniformly determined by a transmitter name in every receptor context.
+6. Save sparse numeric arrays, input/output index arrays, sensory mapping, statistics and a manifest. Validate finite values, bounds, sorted/canonical sparse indices and nonempty selected populations.
+7. Benchmark the prepared cache separately from raw-data import. Peak preprocessing memory and steady-state simulator memory are different quantities.
+
+For scale planning only, Fly64's documented retained graph has 166,700 nodes and 25,582,938 weighted directed edges under its own selection policy.[fn:flynotes] Those are not universal MaleCNS counts and must not be hard-coded as the definition of the dataset. A modified selection gets a new profile and clearly reported counts.
+
+For E edges and N nodes, a float32/int32 CSR representation requires roughly =8E + 4(N+1)= bytes, before Python objects, auxiliary arrays or temporary workspaces. For that documented graph, the formula is approximately 195.8 MiB. Keeping both CSR and CSC roughly doubles the sparse-array component, not the entire process's memory. Preprocessing may require substantially more. Measure resident memory and allocation peaks on the actual machine.
+
+CSR is a useful reference for matrix-vector products; CSC is convenient for processing outgoing columns of active presynaptic neurons.[fn:csr][fn:csc] Sparse/event evaluation must agree with a dense reference on small graphs. Do not label edge pruning, circuit cropping, or a changed integration step as a transparent performance optimization.
+
+** Dynamics baseline
+
+An adequate first model is a declared leaky integrate-and-fire approximation: decay voltage, add signed recurrent input from the previous step, add sensory current only to selected input cells, add explicitly seeded background drive/noise, threshold, and reset fired cells. All constants belong in the profile.
+
+The 20 ms neural step here is an engineering time scale compatible with the reviewed Fly64 example, not a claim of physiologically accurate spike timing. Keep the step unchanged while benchmarking. The model's clock is an integer tick count, never elapsed wall time.
+
+Store two spike buffers, so the definition of propagation delay is clear. Keep optical preprocessing, recurrence, and readout as separately testable functions. A constant frame should not repeatedly trigger temporal contrast solely because it was transmitted again. A newly painted pattern may create a real modeled onset transient; compare sustained behavior after that transient rather than mistaking it for learned shape recognition.
+
+** Mapping neural activity to a 2D action
+
+Start with a fixed, declared readout from selected downstream populations. Let =r_L= and =r_R= be filtered activities. A minimal rule is =steer = clip(g * ((r_R-r_L)-b), -1, 1)=, followed by a small dead zone and a documented smoothing filter. Choose offset b and gain g during a calibration set, then freeze them before evaluation. Report which populations were used and do not claim the artificial action assignment is a measured natural function.
+
+The fixed readout should not inspect image pixels, brush metadata, target coordinates, or a path planner. Do not add a permanent rightward drift to make the demo progress; if a tonic exploratory bias is part of the model, identify it and measure what it does without cues.
+
+A useful cue is established experimentally. Do not name one a =coin attractor= merely because it is drawn in yellow. First measure left/right influence, then distinguish static shape, brightness, color, motion, onset transients, and background effects.
+
+If the fixed readout cannot expose useful behavior, train a small downstream readout over declared neural features as a separate experiment. This can rescue the game without pretending the original circuit naturally understood the task. Preserve a comparison with simple image-based and disconnected-network baselines, and disclose exactly where learning occurs.
+
+* Wire protocol and concurrency contract
+:PROPERTIES:
+:CUSTOM_ID: protocol
+:END:
+
+** Transport
+
+Run the worker locally. Bind TCP to =127.0.0.1=, choose an ephemeral port, and report the selected port through a single machine-readable startup line; write diagnostics to stderr. The desktop owns the child process and shuts it down on exit. Do not bind publicly or depend on an Internet connection during play.
+
+Use a four-byte unsigned big-endian byte count followed by that many bytes of UTF-8 JSON. The maximum body length is 1,048,576 bytes. Read exact lengths, handling short reads and EOF; do not assume one TCP read returns one message. Python's socket interface supplies the underlying local networking primitives.[fn:socket]
+
+Base64 is acceptable here. One 128×96 RGB8 observation is 36,864 bytes, or 49,152 base64 characters before JSON metadata. At ten observations per simulated second that is about 0.47 MiB of base64 payload. This calculation is not a bandwidth benchmark. Avoid shared-memory synchronization work unless profiling demonstrates a need.
+
+Only one state-mutating request may be outstanding. The I/O thread handles framing and puts owned messages into bounded queues. Only the coordinator changes authoritative world state. The worker serializes all calls into one model instance.
+
+** Identity and state
+
+Every play request carries:
+
+| Field | Meaning |
+|-------+---------|
+| =version= | Protocol version, initially 1 |
+| =epoch= | New 128-bit random session identity after reset/profile replacement |
+| =step_id= | Monotonically increasing request ID within the epoch |
+| =physics_tick= | World tick at observation; a multiple of ten |
+| =world_revision= | Revision that produced the image |
+| =profile_sha256= | Fingerprint of the frozen dynamics, mappings, readout and sensor contract |
+| =rgb_sha256= | Hash of the exact uncompressed observation bytes |
+
+The reply echoes this identity. The coordinator accepts a reply only if every field matches the one outstanding observation and it has not already been consumed. A delayed response from a pre-reset worker must not move the new actor.
+
+The profile fingerprint does not replace separate provenance hashes. Keep a structured manifest so disagreements can be diagnosed. For a fixed puzzle attempt, weights and sensor mapping must not change behind the same fingerprint.
+
+** Exact play-step shape
+
+The test suite constructs real base64 frames rather than including an enormous literal string here. The normative request fields are:
+
+#+begin_example
+kind = "step"
+version = 1
+epoch = 32 lowercase hexadecimal characters
+step_id, physics_tick, world_revision = nonnegative integers
+profile_sha256, rgb_sha256 = 64 lowercase hexadecimal characters
+width = 128
+height = 96
+format = "rgb8"
+neural_steps = 5
+frame_b64 = strict base64 of width * height * 3 RGB bytes
+#+end_example
+
+The response has =kind="action"=, the same identity fields, =neural_steps_done= set to 5 (for this request, not cumulative), and =action={"steer": value, "jump": boolean}=. Steering must be finite and within [-1,1]. Unknown step/action fields are rejected. Reject duplicate JSON keys, nonstandard NaN/Infinity literals, booleans masquerading as integer IDs, invalid base64, and length/hash mismatches.
+
+The reference module implements validation of precisely these two messages. It does not implement the whole worker service.
+
+** Lifecycle commands to implement
+
+| Command | Input | Response and invariant |
+|---------+-------+------------------------|
+| =load_profile= | profile path, expected manifest hash, seed, mode | =loaded= with actual hashes, counts and capabilities; does not claim readiness until load succeeds |
+| =step= | exact image request above | one =action=; advances exactly five neural ticks |
+| =inspect= | epoch and last completed step ID | named input/downstream rates, decoder state and timings; changes no state |
+| =snapshot= | epoch, boundary ID, destination under runs directory | snapshot manifest and digest; valid only at an agreed boundary |
+| =restore= | snapshot manifest and new epoch | =restored= with exact profile and boundary IDs; no action before acknowledgement |
+| =shutdown= | epoch | acknowledge, close files, release model |
+
+Use common framing but distinct validated schemas for these lifecycle messages. Paths must resolve under configured data/profile/run roots, not arbitrary commands. The first version does not need pickle, dynamic source loading, or a plugin language. Inspection can run at two wall-clock updates per second while paused; it must never advance the neural model.
+
+A repeated =step_id= with exactly the same request digest may return a cached reply without advancing the model again. The same ID with different content is a protocol fault. On connection loss after a possibly processed request, do not blindly resend to a fresh model: restore a known boundary and replay, or visibly reset the attempt. There is no distributed exactly-once guarantee from an integer ID alone.
+
+* Scheduling, pause, failure, and replay
+:PROPERTIES:
+:CUSTOM_ID: scheduling
+:END:
+
+** Keep simulated time distinct from wall time
+
+The implementation uses a simple sequential decision block:
+
+#+begin_example
+BOUNDARY: world and brain represent the same completed interval
+  apply any approved boundary transaction
+  compose observation from the authoritative world
+  send one STEP request
+WAITING:
+  world/brain integration does not advance in the host
+  UI remains responsive; worker performs its five neural ticks
+  accept matching ACTION or fault
+APPLYING:
+  consume jump edge on the first tick only
+  run exactly ten world ticks, paced at 0.01 s each
+  do not run another neural request or commit an edit mid-block
+BOUNDARY:
+  increment step_id and publish the joint completion state
+#+end_example
+
+The resulting coupling is a zero-order-held, block-discretized controller, not continuous biological interaction. The neural response is integrated before applying the corresponding world interval. Document that modeling choice; do not call computation time a measured neural reaction time.
+
+The nominal ratios are 100 physics ticks, 50 neural ticks, and 10 observations per simulated second. Rendering is independent. While waiting for a worker response, do not accumulate catch-up debt. Resume pacing from the accepted response rather than jumping the character forward because the worker was slow.
+
+Bevy's fixed-step examples explain why physics state and presentation interpolation should be separated.[fn:fixed] In this application the authoritative counter belongs to the coordinator, because deliberately skipped/paused integration is not the same as elapsed engine time. Bevy =FixedUpdate= can call the core step only in APPLYING, or a custom accumulator can call it from Update; do not let both advance the world. The default is the custom accumulator: clear it on entering WAITING or PAUSED, add elapsed wall time only in APPLYING, cap retained debt at 50 ms, and never run more than the remaining ticks in the current ten-tick block. Discard excess wall-time debt rather than changing the 10 ms integration step. This can slow simulated time after a frame stall, which is preferable to a burst of unseen motion.
+
+For the proposed sequential pacing, ignoring overhead, a neural response taking c milliseconds yields approximately =100/(100+c)= real-time factor. At c=25 ms the estimate is 0.8; at c=100 ms it is 0.5. These are scheduling calculations, not measured simulator performance. A later pipelined mode could overlap computation and physics, but would introduce an explicit control delay and require new replay/validation tests. It is not an invisible optimization.
+
+** Pausing
+
+If pause or pointer-down arrives during WAITING/APPLYING, complete that block, then enter PAUSED. Show a =pausing= state immediately so the user understands why the actor may finish a short motion. Do not save a joint checkpoint between the worker's five completed steps and the world's ten corresponding steps.
+
+While PAUSED, neural integration, noise, reward traces, decoder smoothing and physical timers all stop. UI redraw and inspection continue. Commit the stroke, increment the world revision, and construct the next observation only on resumption. A visual edit deliberately changes the next retinal input; it does not reset fast neural state automatically.
+
+** Worker faults
+
+At 250 ms wall latency, display a waiting indication; the world is already blocked. At a configurable two-second step timeout, enter FAULT. These are initial UX thresholds to tune after measuring the backend, not claims that it can meet them. Slow initial graph loading uses a separate loading state.
+
+A fault does not switch to a synthetic controller or continue motion. Offer a visible restart from the last stable checkpoint. If a stale response arrives after reset, reject it by epoch. A nonfinite action, unexpected schema, wrong profile, or inconsistent tick count follows the same fail-closed path.
+
+** What a complete checkpoint contains
+
+| Area | Required state |
+|------+----------------|
+| World | base level hash, player masks, visual raster, actor position/velocity/support, hazards, collectible states, world tick, goal/failure state |
+| Neural dynamics | voltages, previous spikes, recurrence buffers, tick count, background generator state |
+| Sensory pipeline | previous retinal samples and temporal-filter state |
+| Decoder | rate-window contents/order, smoothing values, jump cooldown/edge state |
+| Learning when present | trained parameters, normalization statistics, eligibility traces, optimizer state, reward baseline, learning enabled flag |
+| Coordinator | stable boundary ID, next step ID, profile fingerprint; no in-flight request |
+| Provenance | code version, dependency lock digest, platform information, graph and sensor-map hashes |
+
+Saving only the initial random seed is not a mid-run checkpoint. NumPy exposes the bit generator's complete state for saving/restoring.[fn:rng] Save numeric arrays and JSON metadata, load arrays with =allow_pickle=False=, and validate dimensions and digests before use.[fn:npload]
+
+Share the immutable graph by content hash rather than writing it into every checkpoint. Checkpoints containing learned changes reference a base graph plus an explicitly indexed delta or a readout parameter block. Reset creates a new epoch even when restoring the same numerical state.
+
+** Two different replay tests
+
+*Controller replay* supplies recorded images to the worker from the same checkpoint and compares actions and selected neural outputs. It isolates the neural pipeline.
+
+*World replay* supplies recorded accepted actions and committed edit deltas to the headless world and compares state hashes at every boundary. It isolates physics and editing.
+
+Only after both work should a full closed-loop replay be claimed. Exactness is initially limited to the same platform, code and dependency versions. Do not promise cross-architecture floating-point identity.
+
+Log each observation's exact bytes or lossless reference, its identity, returned action, accepted action/jump, edits, and checkpoint references. Record rate summaries rather than every neuron's full trace by default. Preserve raw evidence for assay runs; ordinary play can use a bounded rolling log.
+
+* Application interfaces
+:PROPERTIES:
+:CUSTOM_ID: interfaces
+:END:
+
+The following Rust declarations specify boundaries for implementation; they are not compiled application code. The actual implementation should validate a transaction before mutating state and keep snapshots versioned.
+
+#+begin_src rust
+#[derive(Clone, Copy, Debug)]
+pub struct Action {
+    pub steer: f64,       // validated finite value in [-1, 1]
+    pub jump: bool,       // edge request, not a held key
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct ActorState {
+    pub x: f64,
+    pub y: f64,
+    pub vx: f64,
+    pub vy: f64,
+    pub grounded: bool,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum PaintLayer { Solid, VisualRgba }
+
+#[derive(Clone, Debug)]
+pub struct ByteChange {
+    pub index: u32,
+    pub before: u8,
+    pub after: u8,
+}
+
+#[derive(Clone, Debug)]
+pub struct EditTransaction {
+    pub layer: PaintLayer,
+    pub based_on_revision: u64,
+    pub changes: Vec<ByteChange>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Outcome { Running, Won, Failed }
+
+#[derive(Clone, Debug)]
+pub struct Frame {
+    pub physics_tick: u64,
+    pub world_revision: u64,
+    pub rgb8: Vec<u8>,    // exactly 128 * 96 * 3 bytes
+}
+
+pub trait WorldApi {
+    fn actor(&self) -> ActorState;
+    fn tick(&self) -> u64;
+    fn revision(&self) -> u64;
+    fn validate_edit(&self, edit: &EditTransaction) -> Result<(), String>;
+    fn commit_edit(&mut self, edit: EditTransaction) -> Result<(), String>;
+    fn step_tick(&mut self, action: Action, consume_jump_edge: bool) -> Outcome;
+    fn observe(&self) -> Frame;
+    fn snapshot_bytes(&self) -> Result<Vec<u8>, String>;
+    fn restore_bytes(&mut self, bytes: &[u8]) -> Result<(), String>;
+}
+#+end_src
+
+A visual transaction indexes RGBA bytes, but validation occurs on the resulting pixels: alpha must be 0 or 255, and edits outside protected/bounded regions are rejected. A solid transaction indexes binary cells. =based_on_revision= prevents committing a preview against a different world. =before= bytes must also match; a stale undo must not overwrite unrelated edits.
+
+In the worker, the public backend operation is conceptually =step_image(rgb8, neural_steps=5) -> (action, diagnostics)=. The transport validates image metadata first. The backend may return diagnostics to an in-process cache, but the strict ACTION message contains only the fields specified above. =inspect= reads that cache without integration. This prevents inspector refresh frequency from changing behavior.
+
+* UI, player feedback, and first level
+:PROPERTIES:
+:CUSTOM_ID: ui-level
+:END:
+
+** Layout
+
+The agreed layout has a large game canvas on the left and a thin, persistent observation column on the right. Start with approximately 80% of the content width for the game and 20% for the observation column. Preserve the game world's aspect ratio when scaling the canvas.
+
+Place the drawing toolbar along the top of the game pane: solid brush, visual brush, separate erasers, color, radius and undo/redo. A compact footer contains pause/reset controls, simulation status and the controller-mode badge.
+
+The right column has two stacked panels:
+
+- Upper right: a compact visualization of the fly's neural activity. Actual worker telemetry drives brightness or color, with stable scales across frames.
+- Lower right: the fly's vision, displaying the exact =128 x 96= RGB image sent to the controller, enlarged while preserving its 4:3 aspect ratio.
+
+Both panels freeze when the simulation enters PAUSED. UI redraw and inspection may continue, but must not introduce new activity or advance model state. The layout should let the player connect an edit in the game with its appearance in the sensory image and the resulting neural response.
+
+Show the selected tool's meaning in plain language: =Solid: changes collision= versus =Ink: changes appearance only=. Invalid placement gets a red preview and a specific reason. Display =pausing=, =paused=, =waiting for controller=, =running= and =controller fault= as distinct states.
+
+Keep the sensor profile name, last accepted steering value, requested/accepted jump, selected population rates, learning status and real-time factor available as compact inspector details while preserving the two visualizations as the column's main content. Do not present generated thoughts or emotions as measurements.
+
+A permanent small badge identifies the active backend: =FIXTURE — not neural=, =MaleCNS fixed controller=, or =MaleCNS + trained readout=. Displaying a full connectome picture must never substitute for proving the action path.
+
+** One level before three
+
+The supplied =levels/01_bridge.json= defines a 96-pixel gap, a spawn platform, a destination platform and a visible goal. Jump is disabled, and the gap exceeds the example jump reach even if jumping were enabled. The JSON contains no neural preference or guaranteed successful route; those must be established by the assay.
+
+Use a calibrated distractor/cue arrangement to make the player need both terrain and visual intervention. Do not secretly freeze the actor until the player clicks the desired tool. Test the proposed demonstration from several predefined seeds and initial states. A single lucky trajectory is not level validation.
+
+The next two levels, only after that interaction works, can be:
+
+| Level | Added demand | Development check |
+|-------+--------------+-------------------|
+| Wrong Way | Remove or relocate a distraction before directing travel | The same cue changes steering when moved across the sensory window |
+| The Scenic Route | Build a stepped route and use intermediate visible cues | The player supplies the detour; the worker has no route planner |
+
+For a fixed checkpoint, run a small factorial comparison: no edits, bridge only, cue only, bridge+cue. Compare success and movement across the same seed set. A practical candidate target is at least 16 successes in 20 combined trials and a substantial advantage over either component alone. This is a provisional game-design gate, not a statistically proven biological result. Report every trial, including failures, and account for correlated starting states.
+
+** Prevent degenerate solutions without over-restricting drawing
+
+The overlap guard prevents drawing a platform through the actor and lifting it to victory. Base terrain and the goal remain immutable. Drawn terrain is static. No moving conveyor or telekinetic tool is present.
+
+Do not add a restrictive ink budget until unconstrained play is engaging. If painting one giant mark at the goal solves everything, revise the measured cue behavior, field of view, or level layout rather than inserting a hidden exception that makes the cue arbitrarily stop working.
+
+Give the player enough response information to learn. A preview of what the sensor receives and a clear movement result are more useful than a thousand blinking neurons.
+
+* Optional learning: classroom first, frozen puzzle second
+:PROPERTIES:
+:CUSTOM_ID: learning
+:END:
+
+Learning is an independent milestone, not a launch requirement. The default game learns nothing during a puzzle attempt. A player can still learn to coax a fixed controller.
+
+** A feasible experimental boundary
+
+A practical first learning experiment trains a small readout over fixed neural features. Choose a declared set of downstream neurons, not raw image pixels concatenated behind the scenes. Let z be a normalized feature vector produced by that activity and let p = softmax(Theta z + bias) choose left or right in a two-choice classroom.
+
+Present a target glyph on a randomized side and a distractor on the other. The controller chooses. Only afterward, the classroom produces a scalar reward r in {0,1}. A possible score-function update is:
+
+#+begin_example
+advantage = reward - running_reward_baseline
+Theta += learning_rate * advantage * (one_hot(action) - p) outer z
+bias  += learning_rate * advantage * (one_hot(action) - p)
+then update the running reward baseline
+#+end_example
+
+This is a proposed learning experiment, not a demonstrated training recipe. Do not promise that the selected neural features carry enough information to learn the distinction. Compare against an image-only baseline and an appropriate disconnected/scrambled neural control. If performance survives replacing the neural features with constants, investigate leakage or a flawed task.
+
+Normalize features using training data only, freeze normalization for evaluation, and save every trainable value. The classroom may know the target identity to compute feedback. That knowledge is not included in the play STEP packet or supplied before the model's choice.
+
+A training transaction creates a new frozen profile/checkpoint when exported to the game. Load it under a new epoch. During puzzle attempts, no rewards or player edits change its parameters. Keep classroom reward delivery separate from the normal packet schema rather than adding a permissive =reward= field to every play observation.
+
+** Training tasks must resemble the eventual sensor
+
+Use the same RGB pipeline, glyph sizes, backgrounds, and temporal sampling as play. Split base glyphs/authors into train, calibration, and test sets *before* generating augmentations. New transformations of the same base image are not automatically independent examples.
+
+Use balanced side randomization, recolored targets, matched-color distractors, background changes, and blank trials. Also test after several static observation blocks so first-frame temporal contrast is not the only predictor. A left/right classroom result does not establish locomotion or platform navigation.
+
+Freeze parameters before evaluating unfamiliar examples. Report accuracy with its trial count and a suitable interval; do not repeatedly tune on the final test set. The supplied Wilson helper is a calculation aid, not evidence of independent trials or model validity.
+
+** Reward stamps and coin paint
+
+A reward stamp is a real environment object that delivers an explicit event on contact in a declared training mode. A painted coin is merely visible pigment. Do not let a painted coin dispense a reward automatically or emit a hidden attraction field.
+
+In ordinary puzzle mode, the reward stamp can be omitted entirely. If collectibles remain for presentation, their contact can be logged or scored by the host while learning remains disabled. A score increase alone is not a neural reinforcement signal.
+
+** Internal plasticity is a later research fork
+
+Changing selected internal connections is a different model, not a harmless toggle. Define the eligible edges, update rule, reinforcement input, time constants, weight bounds, state restoration, and matched controls. Keep data-derived connectivity separate from model-derived dynamics and plasticity. Do not present changing weights as sufficient evidence of learned behavior.
+
+* Validation matrix and evidence to retain
+:PROPERTIES:
+:CUSTOM_ID: validation
+:END:
+
+| Test | Intervention | Expected property |
+|------+--------------+-------------------|
+| Raster consistency | Same quantized polyline with collinear intermediate samples | Same collision cells |
+| Atomic edit | One illegal cell inside an otherwise legal stroke | No portion commits |
+| Geometry/paint separation | Draw a visual-only bridge | Actor still falls |
+| No embedding | Draw/undo solids through actor | Rejected; actor pose unchanged |
+| UI isolation | Change cursor, HUD, spectator zoom and selected tool | Same observation bytes at the same world state |
+| Observation fidelity | Move or erase a visible cue | Transmitted bytes change exactly where the composition changes |
+| Timing | Pause for arbitrary wall time | World and all model integration state stay unchanged |
+| Epoch rejection | Deliver a response from before reset | No action applied |
+| Exactly-once consumption | Deliver a duplicate valid response | World advances only once |
+| Full state restore | Restore checkpoint and replay exact input sequence | Same outputs on the declared execution platform |
+| Neural sensitivity | Connected vs frozen/disconnected visual input | Frame dependence disappears when the visual path is disconnected |
+| Useful valence | Place cue on randomized left/right sides | Direction changes predictably enough to be useful |
+| Shape specificity | Recolor target, match distractor color | Quantifies which information is actually used |
+| Onset control | Hold stimulus beyond its first flash | Distinguishes sustained response from a paint-onset transient |
+| Goal non-leakage | Change unrendered goal metadata only | Same frame and action from matched state |
+| Puzzle contribution | Bridge/cue factorial experiment | Measures what each intervention contributes |
+| Learning state, optional | Freeze, remove, restore trained block | Performance follows the declared trained state under controlled tests |
+
+The supplied 30 tests cover small reference functions, not this whole matrix. In particular, the HUD-isolation reference test demonstrates an API boundary with no HUD parameter; the real desktop still needs an integration test proving its compositor follows that boundary.
+
+** Minimal G2 assay design
+
+Restore a common checkpoint, randomize cue side using a recorded seed, show the stimulus through the real sensor pipeline, and observe a short fixed-duration action sequence. Mirror the cue placement in a paired trial. Reset fast state and noise consistently; do not accidentally let the first trial train or prime the second.
+
+Record initial state hash, rendered frames, cue family/side for the *experiment log only*, neural input mode, action sequence, body displacement and terminal outcome. Compute signed displacement toward the cue, action latency, and the distribution across trials. A screen that changes activity but yields no side-consistent action fails G2.
+
+For a no-input control, restore the same state but zero/disconnect the declared retinal currents. Do not remove background noise in just one condition. Use calibration trials to choose readout gains; keep a separate held-out set for the final steering claim. Suggested 64-trial evaluations are engineering targets, not proof that 64 trials is sufficient for every inference.
+
+** Replay artifacts
+
+Write =run_manifest.json=, =events.jsonl=, lossless observation chunks, and boundary checkpoints. The run manifest lists whether the mode was fixture, fixed neural, trained readout, or plastic; whether learning was enabled; code/profile/graph hashes; seed lineage; simulated duration; wall duration; and all dropped/faulted attempts.
+
+Report failures, exclusions and timeout counts. Do not quietly replace stalled episodes with successful retries. Developer and demo runs can be separately labeled, but both must remain identifiable.
+
+* Performance and deployment
+:PROPERTIES:
+:CUSTOM_ID: performance
+:END:
+
+Benchmark three paths separately: cold import, warm neural stepping without graphics, and the full application including rendering, logging and edits. The existing Fly64 author reports one M2/16 GB machine, not a validated target for this game.[fn:flyreadme] No laptop frame rate or training duration has been established by this guide.
+
+Measure p50/p95/p99 STEP latency, real-time factor, resident memory, import peak, UI frame times, input-to-preview delay, edit commit time, and reset/load time. Put the benchmark configuration and mode beside every number.
+
+Keep the graph immutable, precompute pixel-to-neuron sample indices, bound telemetry queues, and compose only dirty world tiles. Start with one neural instance; sequentially restore states for A/B experiments rather than duplicating a large graph in many processes. Do not turn sparse graphs dense to move them to an accelerator.
+
+For slow execution, reduce cosmetic work first. Lower inspector refresh, disable large neural visualizations and heavy logging, and accept a visible simulation slowdown if necessary. Do not silently lower neural integration resolution, discard neural steps, or replace the controller. Any graph reduction or changed sensory/decision rate creates a new profile requiring validation.
+
+The raw 128×96 RGB stream at ten observations per simulated second is about 21.1 MiB per simulated minute before compression. A 30-second rolling image buffer is about 10.5 MiB. These are uncompressed-size calculations; use them to cap logs rather than assuming storage is free.
+
+Before the event demo, preload the graph and profile, disconnect networking, and launch the actual packaged command from a clean terminal. The build must not fetch assets or create a virtual environment on stage. Use a local virtual environment with a known interpreter for the first deliverable; standalone executable bundling is a later packaging decision, not a prerequisite.
+
+On macOS, test behavior across display scaling, window focus changes, and sleep/resume. The program does not need camera permission because its world is rendered internally. Do not add screen-capture permission just to feed the fly an image the program already owns.
+
+* Build sequence for three people
+:PROPERTIES:
+:CUSTOM_ID: build-sequence
+:END:
+
+The windows below are relative budget allocations for a roughly 24-hour build, not estimates that the simulator or learning will finish within them. Preserve the gates even when the wall-clock schedule slips.
+
+| Window | Integration objective | Cut or change if it fails |
+|--------+-----------------------+--------------------------|
+| H0–H2 | Freeze contracts; headless terrain fixture; begin data preparation and sensory assay | Stop feature expansion; resolve interface/data blockers |
+| H2–H5 | G0 working; worker loads; initial G1/G2 comparisons | Cut learning and jumps; investigate retina/readout before visuals |
+| H5–H9 | One real neural closed loop with Paint tools and reset | Do not add levels while behavior remains unproven |
+| H9–H14 | G3 with unfamiliar players; replay; fault handling | Simplify the level and improve feedback |
+| H14–H18 | Optional classroom only if the core is stable | Otherwise improve reliability and presentation |
+| H18–H24 | Offline packaging, evidence review, rehearsal, recovery test | No new subsystem |
+
+** Task 1 — core geometry and a headless fixture
+
+Create =terrain.rs=, =strokes.rs=, =body.rs=, and =level.rs=. Start with failing tests for a continuous stroke, protected-cell rejection, visual-only non-collision, wall contact and support deletion. Port the reference raster/transaction behavior before adding the display.
+
+Expose =WorldApi= and implement a deterministic fixture action sequence that traverses a known solid bridge. Run =cargo test -p world_core= after that crate exists. This planned command does not refer to a supplied compiled crate. Commit only after geometry, body and layer tests pass.
+
+** Task 2 — worker fixture and strict protocol
+
+Create =wire_types/src/lib.rs=, =worker_client.rs=, =protocol.py=, and =service.py=. Begin with a deliberately non-neural fixture that returns a known action for a known test image, under the fixture badge. Implement exact framing, identity validation and one-in-flight discipline. Use the supplied malformed-message cases as acceptance tests.
+
+Add a test that resets while a reply is delayed, and a test that duplicates a reply. The new world must not move from either stale or repeated consumption. Implement load/inspect/snapshot/restore schemas before relying on a long-running neural process.
+
+** Task 3 — sensory compositor and neural assay
+
+Create =sensory.rs= and =retina.py=. Test exact crop bytes, padding, no actor/HUD, and color/scale consistency. Implement the graph loader and a minimal verified recurrence in =graph.py= and =dynamics.py=. Create =cue_assay.py= and run G1 before G2.
+
+The deliverable is an evidence report with traces and action/displacement comparisons, not a brain animation. Choose the cue/readout based on calibration results, export a frozen profile, and reserve untouched trials for evaluation. Document any source selection or modeling approximation.
+
+** Task 4 — Paint editor and one real controller loop
+
+Create =canvas.rs=, =toolbar.rs=, =display.rs= and =coordinator.rs=. Add pointer capture, pause-on-stroke, invalid previews, layer-specific erasing, undo/redo and complete reset. Test resizing and pan/zoom conversion independently of the sensor.
+
+Connect the validated profile through the same worker interface as the fixture. Add the immutable mode badge and exact sensory preview. The manual debug actor controls must be disabled outside fixture mode. Verify the player can change both physical access and controller behavior.
+
+** Task 5 — restoration, fault handling and logging
+
+Create =checkpoint.rs=, =state.py= and the run journal. Pause only at aligned boundaries. Test a full round trip through save/load, a worker process crash, a slow response, corrupt input, and loss of window focus during a stroke. Refuse incompatible profiles before changing state.
+
+Run controller replay and world replay separately. Include a small numerical dense-versus-sparse graph test. Do not use a successful software test suite as a biological-validation claim.
+
+** Task 6 — level and visitor testing
+
+Use =01_bridge.json= and the calibrated cue set. Run the bridge/cue factorial comparison and record all outcomes. Then have at least three unfamiliar people attempt the level without a long explanation. Record whether they distinguish solid and visual tools, identify when the fly has perceived a cue, and recover from a failed drawing.
+
+If they cannot learn from the response, change feedback or simplify the task. Do not make the controller secretly smarter only for the demo. Only then add a second level or optional learning.
+
+** Task 7 — optional learning
+
+Create =classroom.py= and =generalization.py=. Start with held-out visual-choice performance, not autonomous platform traversal. Export a new frozen profile and retain the old one. Report whether learning is in a readout or inside the circuit. No parameter update occurs in ordinary play.
+
+** Task 8 — release gate
+
+Produce an offline launch path, provenance/attribution files, a saved demonstration checkpoint and a recovery button. Run a 20-minute mixed interaction soak: repeated drawing, erasing, pausing, resetting, controller inspection and one deliberately induced worker fault. Capture timing and memory; a stability soak is not a learning experiment.
+
+Review the final presentation claims against the active mode. A fallback recording may be shown as a recording, not as a live run. The live demo should allow a judge-chosen edit, not merely replay a preselected success.
+
+* Acceptance and the final demonstration
+:PROPERTIES:
+:CUSTOM_ID: acceptance
+:END:
+
+A release candidate is ready only when the world, controller and evidence agree. Drawn solids match collision. Visual paint changes the transmitted input. The worker's measured activity contributes to its readout. The readout contributes to movement. Reset restores the actual state. A missing worker does not leave a secretly automated character.
+
+For the live demonstration, start from the saved checkpoint, show the goal, and say that the character has no goal coordinate. Let the visitor add a route. Then have them add or relocate a tested visual cue. Show the exact sensory view while the character responds. Reset and remove one ingredient to demonstrate the difference. Do not promise a successful arbitrary doodle; an honest failed hypothesis can be part of the interaction.
+
+The short description to optimize toward is:
+
+#+begin_quote
+You cannot control the fly. You can only make the world more convincing.
+#+end_quote
+
+The technical counterpart is equally important: no hidden object labels, no waypoint shortcut, no substituted controller, and no claim of learning that the measurements do not support.
+
+* Reproducing the supplied reference checks
+:PROPERTIES:
+:CUSTOM_ID: reference-checks
+:END:
+
+The rest of this document is a small literate reference package. Its four named source blocks can be tangled into the same relative paths that are included in the ZIP. They are deliberately limited to pure contracts: no engine, no neural weights, no network listener, and no installation step.
+
+** Run the supplied files
+
+From the extracted bundle root, use Python 3.12 or newer:
+
+#+begin_src sh :tangle no :eval never
+cd reference
+python3 -m unittest -v
+#+end_src
+
+The suite was executed on CPython 3.13.5 in the working environment and passed 30 tests. This is an actual run of the supplied Python files, not a forecast for the unimplemented Rust application. The full verbose output is in =reports/reference_tests.txt=.
+
+** Org/Babel workflow
+
+Open this document in Emacs and use =M-x org-babel-tangle= to emit only the explicitly named files below. Tangling writes into =reference/=, =config/=, and =levels/= relative to this document; review local changes before overwriting existing files. Source blocks that specify =:tangle no= are explanatory and are not emitted.
+
+The document defaults to =:eval never-export= so exporting does not execute code. To run the checks inside Org, enable the shell Babel language in your own Emacs configuration, then explicitly execute the following block. Do not globally disable confirmation for unrelated documents.
+
+#+name: run-reference-checks
+#+begin_src sh :dir reference :results output verbatim :exports both :tangle no
+python3 -m unittest -v 2>&1
+#+end_src
+
+#+RESULTS: run-reference-checks
+: Ran 30 tests. OK.
+
+The compact result above records the independently executed file-based run. Emacs is not available in the verification environment, so native Emacs tangling/execution has not been tested. The delivered source-block bodies were checked byte-for-byte against their companion files. The HTML companion is a non-executing export.
+
+** Reference implementation
+
+=capsule_cells= uses integer geometry and continuous segment capsules, not event-rate-dependent circle stamping. Its generic bound permits 4,096 input points; the product's stricter 2,048-point limit must be enforced by the editor before calling it. =apply_delta= specifies solid-layer behavior only; RGBA editing and the real game body remain implementation work.
+
+=validate_step= and =validate_action= specify a fixed play profile. Lifecycle commands, authentication between local processes if required, queue ownership, and full checkpoint orchestration are not implemented by these examples. A protocol field not explicitly permitted is rejected instead of passed through.
+
+#+name: reference-contracts
+#+begin_src python :tangle reference/contracts.py :mkdirp yes :eval never-export
+"""Small, independently authored specifications for the implementation guide.
+
+These are reference checks, not a platformer, neural simulator, or complete IPC
+client/server. Python 3.12+ and the standard library are sufficient.
+"""
+from __future__ import annotations
+
+import base64
+import binascii
+import hashlib
+import json
+import math
+import re
+import struct
+from collections.abc import Mapping, Sequence
+from typing import BinaryIO
+
+MAX_MESSAGE = 1_048_576
+SENSOR_WIDTH, SENSOR_HEIGHT = 128, 96
+STEP_FIELDS = {
+    'kind','version','epoch','step_id','physics_tick','world_revision',
+    'profile_sha256','width','height','format','neural_steps',
+    'rgb_sha256','frame_b64',
+}
+ACTION_FIELDS = {
+    'kind','version','epoch','step_id','physics_tick','world_revision',
+    'profile_sha256','rgb_sha256','neural_steps_done','action',
+}
+IDENTITY_FIELDS = ('version','epoch','step_id','physics_tick','world_revision',
+                   'profile_sha256','rgb_sha256')
+
+
+def _integer(value: object, lo: int, hi: int, name: str) -> int:
+    if type(value) is not int or not lo <= value <= hi:
+        raise ValueError(f'{name} must be an integer in [{lo}, {hi}]')
+    return value
+
+
+def _hex(value: object, digits: int, name: str) -> str:
+    if not isinstance(value,str) or re.fullmatch('[0-9a-f]{'+str(digits)+'}',value) is None:
+        raise ValueError(f'{name} must be {digits} lowercase hex characters')
+    return value
+
+
+def capsule_cells(points: Sequence[tuple[int,int]], radius_q: int,
+                  width: int, height: int, cell_q: int) -> set[tuple[int,int]]:
+    """Union of polyline capsules sampled at cell centers. Coordinates are
+    integers in 1/256-pixel units. No event-rate-dependent circle stamping.
+    This reference favors clarity; the engine should also track dirty bounds.
+    """
+    _integer(width,1,2048,'width'); _integer(height,1,2048,'height')
+    _integer(radius_q,1,1<<30,'radius_q'); _integer(cell_q,2,1<<30,'cell_q')
+    if cell_q % 2 or not 1 <= len(points) <= 4096:
+        raise ValueError('even cell size and 1..4096 polyline points required')
+    for point in points:
+        if len(point)!=2: raise ValueError('point must contain x and y')
+        for value in point: _integer(value,-(1<<30),1<<30,'coordinate')
+    segments=list(zip(points,points[1:])) or [(points[0],points[0])]
+    result:set[tuple[int,int]]=set()
+    r2=radius_q*radius_q
+    half=cell_q//2
+    for (ax,ay),(bx,by) in segments:
+        minx=max(0,(min(ax,bx)-radius_q-half)//cell_q)
+        maxx=min(width-1,(max(ax,bx)+radius_q-half)//cell_q)
+        miny=max(0,(min(ay,by)-radius_q-half)//cell_q)
+        maxy=min(height-1,(max(ay,by)+radius_q-half)//cell_q)
+        dx,dy=bx-ax,by-ay
+        length2=dx*dx+dy*dy
+        for y in range(miny,maxy+1):
+            for x in range(minx,maxx+1):
+                px,py=x*cell_q+half,y*cell_q+half
+                ux,uy=px-ax,py-ay
+                projection=ux*dx+uy*dy
+                if length2==0 or projection<=0:
+                    inside=ux*ux+uy*uy<=r2
+                elif projection>=length2:
+                    inside=(px-bx)**2+(py-by)**2<=r2
+                else:
+                    cross=ux*dy-uy*dx
+                    inside=cross*cross<=r2*length2
+                if inside: result.add((x,y))
+    return result
+
+
+def apply_delta(base: bytes, paint: bytes, updates: Mapping[int,int],
+                protected: set[int], actor_guard: set[int]) -> bytes:
+    """Validate a complete solid-layer transaction before changing anything.
+    Immutable base cells are ignored. Protected mutable cells reject changes.
+    The actor guard forbids adding solids, not erasing supporting terrain.
+    """
+    if len(base)!=len(paint) or not base:
+        raise ValueError('masks must have equal nonzero size')
+    if any(x not in (0,1) for x in base+paint):
+        raise ValueError('masks must be binary')
+    planned=[]
+    for index,value in updates.items():
+        _integer(index,0,len(base)-1,'cell index')
+        _integer(value,0,1,'cell value')
+        if base[index] or paint[index]==value: continue
+        if index in protected: raise ValueError('protected region')
+        if value and index in actor_guard: raise ValueError('solid intersects actor guard')
+        planned.append((index,value))
+    result=bytearray(paint)
+    for index,value in planned: result[index]=value
+    return bytes(result)
+
+
+def crop_rgb(world: bytes, width: int, height: int, center: tuple[int,int],
+             out_width: int, out_height: int, scale: int=2,
+             padding: tuple[int,int,int]=(16,18,22)) -> bytes:
+    """Egocentric cutaway image, no HUD argument and no semantic object input.
+    Each output pixel is an integer box average of scale x scale RGB8 pixels.
+    The engine supplies a canonical actor-free RGB world composition.
+    """
+    for key,value in [('width',width),('height',height),('out_width',out_width),
+                      ('out_height',out_height),('scale',scale)]:
+        _integer(value,1,4096,key)
+    if len(world)!=width*height*3 or len(center)!=2 or len(padding)!=3:
+        raise ValueError('bad RGB frame, center, or padding')
+    for value in center: _integer(value,-(1<<30),1<<30,'center')
+    for value in padding: _integer(value,0,255,'padding')
+    x0=center[0]-(out_width*scale)//2
+    y0=center[1]-(out_height*scale)//2
+    result=bytearray(out_width*out_height*3)
+    for oy in range(out_height):
+        for ox in range(out_width):
+            total=[0,0,0]
+            for dy in range(scale):
+                for dx in range(scale):
+                    x,y=x0+ox*scale+dx,y0+oy*scale+dy
+                    pixel=world[(y*width+x)*3:(y*width+x)*3+3] if 0<=x<width and 0<=y<height else padding
+                    for channel in range(3): total[channel]+=pixel[channel]
+            at=(oy*out_width+ox)*3
+            result[at:at+3]=bytes(value//(scale*scale) for value in total)
+    return bytes(result)
+
+
+def encode_packet(message: dict) -> bytes:
+    if type(message) is not dict: raise ValueError('message must be an object')
+    body=json.dumps(message,allow_nan=False,separators=(',',':'),sort_keys=True).encode('utf-8')
+    if not 1<=len(body)<=MAX_MESSAGE: raise ValueError('message exceeds framing limit')
+    return struct.pack('!I',len(body))+body
+
+
+def _read_exact(stream: BinaryIO, length: int) -> bytes:
+    parts=[]
+    remaining=length
+    while remaining:
+        part=stream.read(remaining)
+        if not part: raise EOFError('incomplete framed message')
+        parts.append(part); remaining-=len(part)
+    return b''.join(parts)
+
+
+def _unique_object(pairs):
+    result={}
+    for key,value in pairs:
+        if key in result: raise ValueError('duplicate JSON key')
+        result[key]=value
+    return result
+
+
+def _invalid_constant(value):
+    raise ValueError(f'nonstandard JSON constant: {value}')
+
+
+def read_packet(stream: BinaryIO) -> dict:
+    length=struct.unpack('!I',_read_exact(stream,4))[0]
+    if not 1<=length<=MAX_MESSAGE: raise ValueError('invalid frame length')
+    message=json.loads(_read_exact(stream,length).decode('utf-8'),
+                       object_pairs_hook=_unique_object,parse_constant=_invalid_constant)
+    if type(message) is not dict: raise ValueError('message must be an object')
+    return message
+
+
+def _validate_identity(message: dict) -> None:
+    _integer(message['version'],1,1,'version')
+    _hex(message['epoch'],32,'epoch')
+    _hex(message['profile_sha256'],64,'profile_sha256')
+    _hex(message['rgb_sha256'],64,'rgb_sha256')
+    for field in ('step_id','physics_tick','world_revision'):
+        _integer(message[field],0,(1<<63)-1,field)
+    if message['physics_tick'] % 10:
+        raise ValueError('observation must be at a 10-tick decision boundary')
+
+
+def validate_step(message: dict) -> bytes:
+    if type(message) is not dict or set(message)!=STEP_FIELDS:
+        raise ValueError('unexpected or missing step fields')
+    if message['kind']!='step': raise ValueError('expected step')
+    _validate_identity(message)
+    _integer(message['width'],SENSOR_WIDTH,SENSOR_WIDTH,'width')
+    _integer(message['height'],SENSOR_HEIGHT,SENSOR_HEIGHT,'height')
+    _integer(message['neural_steps'],5,5,'neural_steps')
+    if message['format']!='rgb8' or type(message['frame_b64']) is not str:
+        raise ValueError('expected base64 RGB8')
+    if len(message['frame_b64'])!=4*((SENSOR_WIDTH*SENSOR_HEIGHT*3+2)//3):
+        raise ValueError('wrong encoded frame length')
+    try: frame=base64.b64decode(message['frame_b64'],validate=True)
+    except (ValueError,binascii.Error) as error: raise ValueError('invalid base64') from error
+    if len(frame)!=SENSOR_WIDTH*SENSOR_HEIGHT*3:
+        raise ValueError('wrong decoded frame length')
+    if hashlib.sha256(frame).hexdigest()!=message['rgb_sha256']:
+        raise ValueError('frame hash mismatch')
+    return frame
+
+
+def validate_action(message: dict, expected_step: dict) -> tuple[float,bool]:
+    validate_step(expected_step)
+    if type(message) is not dict or set(message)!=ACTION_FIELDS or message['kind']!='action':
+        raise ValueError('unexpected or missing action fields')
+    _validate_identity(message)
+    if any(message[k]!=expected_step[k] for k in IDENTITY_FIELDS):
+        raise ValueError('action does not match outstanding observation')
+    _integer(message['neural_steps_done'],5,5,'neural_steps_done')
+    action=message['action']
+    if type(action) is not dict or set(action)!={'steer','jump'}:
+        raise ValueError('invalid action object')
+    steer=action['steer']
+    if type(steer) not in (int,float) or not math.isfinite(steer) or not -1<=steer<=1:
+        raise ValueError('invalid steering value')
+    if type(action['jump']) is not bool: raise ValueError('jump must be boolean')
+    return float(steer),action['jump']
+
+
+def wilson(successes: int, trials: int, z: float=1.959963984540054) -> tuple[float,float]:
+    """Two-sided Wilson interval for a binomial proportion. Not evidence that
+    correlated game runs are independent or that the biological model is valid.
+    """
+    _integer(trials,1,(1<<31)-1,'trials')
+    _integer(successes,0,trials,'successes')
+    if not math.isfinite(z) or z<=0: raise ValueError('z must be positive and finite')
+    p=successes/trials
+    denominator=1+z*z/trials
+    center=(p+z*z/(2*trials))/denominator
+    radius=z*math.sqrt(p*(1-p)/trials+z*z/(4*trials*trials))/denominator
+    return max(0,center-radius),min(1,center+radius)
+#+end_src
+
+** Reference tests
+
+The tests of editor/UI exclusion validate only the purity of the cropping boundary, not a rendered application's separation of layers. The Wilson-interval test uses synthetic counts and is not evidence of a fly learning. The actual game needs the separate acceptance matrix in the validation section.
+
+#+name: reference-contract-tests
+#+begin_src python :tangle reference/test_contracts.py :mkdirp yes :eval never-export
+"""Executable guide examples, not tests of an implemented game or fly model."""
+import base64
+import io
+import json
+import struct
+import unittest
+from copy import deepcopy
+import contracts as c
+
+class ShortReader(io.BytesIO):
+    def read(self, n=-1):
+        return super().read(min(n, 3) if n >= 0 else 3)
+
+class ContractsTest(unittest.TestCase):
+    def request(self):
+        frame = bytes([19]) * (128 * 96 * 3)
+        import hashlib
+        return dict(kind='step', version=1, epoch='a'*32, step_id=0,
+                    physics_tick=0, world_revision=0, profile_sha256='b'*64,
+                    width=128, height=96, format='rgb8', neural_steps=5,
+                    rgb_sha256=hashlib.sha256(frame).hexdigest(),
+                    frame_b64=base64.b64encode(frame).decode('ascii'))
+
+    def reply(self, req):
+        keys = ('version', 'epoch', 'step_id', 'physics_tick', 'world_revision',
+                'profile_sha256', 'rgb_sha256')
+        return dict(kind='action', **{k:req[k] for k in keys},
+                    neural_steps_done=5, action={'steer':0.25, 'jump':False})
+
+    def test_reference_api_exists(self):
+        names = ('capsule_cells', 'apply_delta', 'crop_rgb', 'encode_packet',
+                 'read_packet', 'validate_step', 'validate_action', 'wilson')
+        self.assertTrue(all(callable(getattr(c, n, None)) for n in names))
+
+    def test_capsule_continuous_horizontal(self):
+        result = c.capsule_cells([(2*256,6*256),(30*256,6*256)], 2*256, 8, 4, 4*256)
+        self.assertEqual(result, {(x,1) for x in range(8)})
+
+    def test_collinear_resampling_invariant(self):
+        a = c.capsule_cells([(512,1536),(7680,1536)],512,8,4,1024)
+        b = c.capsule_cells([(512,1536),(4096,1536),(7680,1536)],512,8,4,1024)
+        self.assertEqual(a,b)
+
+    def test_single_point_is_disc(self):
+        self.assertEqual(c.capsule_cells([(512,512)],256,2,2,1024), {(0,0)})
+
+    def test_radius_must_be_positive(self):
+        with self.assertRaises(ValueError):
+            c.capsule_cells([(0,0)],0,2,2,1024)
+
+    def test_atomic_reject_does_not_mutate_input(self):
+        paint = bytes(4)
+        with self.assertRaises(ValueError):
+            c.apply_delta(bytes(4),paint,{0:1,3:1},protected={3},actor_guard=set())
+        self.assertEqual(paint,bytes(4))
+
+    def test_immutable_terrain_is_not_erased(self):
+        result = c.apply_delta(bytes([1,0]),bytes(2),{0:0,1:1},set(),set())
+        self.assertEqual(result,bytes([0,1]))
+
+    def test_cannot_materialize_terrain_in_actor(self):
+        with self.assertRaises(ValueError):
+            c.apply_delta(bytes(4),bytes(4),{2:1},set(),{2})
+
+    def test_erasing_support_is_allowed(self):
+        self.assertEqual(c.apply_delta(bytes(4),bytes([0,0,1,0]),{2:0},set(),{2}),bytes(4))
+
+    def test_undo_is_subject_to_the_same_guard(self):
+        with self.assertRaises(ValueError):
+            c.apply_delta(bytes(4),bytes(4),{2:1},set(),{2})
+
+    def test_delta_outside_grid_rejected(self):
+        with self.assertRaises(ValueError):
+            c.apply_delta(bytes(4),bytes(4),{4:1},set(),set())
+
+    def test_sensory_area_average(self):
+        world=bytes([0,0,0, 40,40,40, 80,80,80, 120,120,120])
+        self.assertEqual(c.crop_rgb(world,2,2,(1,1),1,1,2,(0,0,0)),bytes([60]*3))
+
+    def test_sensory_crop_padding(self):
+        self.assertEqual(c.crop_rgb(bytes([255]*12),2,2,(-20,-20),2,2,1,(7,8,9)),bytes([7,8,9]*4))
+
+    def test_screen_state_cannot_change_sensor_bytes(self):
+        world=bytes([10,20,30]*16)
+        a=c.crop_rgb(world,4,4,(2,2),2,2,2,(0,0,0))
+        editor={'zoom':8,'cursor':(99,1),'selected_tool':'eraser'}
+        editor.update(zoom=2,cursor=(2,9),selected_tool='solid')
+        b=c.crop_rgb(world,4,4,(2,2),2,2,2,(0,0,0))
+        self.assertEqual(a,b)  # Tests this pure boundary, not a real UI integration.
+
+    def test_framing_handles_short_reads(self):
+        req=self.request()
+        self.assertEqual(c.read_packet(ShortReader(c.encode_packet(req))),req)
+
+    def test_framing_rejects_truncation(self):
+        with self.assertRaises(EOFError):
+            c.read_packet(io.BytesIO(c.encode_packet({'kind':'test'})[:-1]))
+
+    def test_framing_rejects_oversize_before_read(self):
+        with self.assertRaises(ValueError):
+            c.read_packet(io.BytesIO(struct.pack('!I',c.MAX_MESSAGE+1)))
+
+    def test_nan_not_encodable(self):
+        with self.assertRaises(ValueError):
+            c.encode_packet({'steer':float('nan')})
+
+    def test_json_duplicate_keys_rejected(self):
+        body=b'{"kind":"step","kind":"action"}'
+        with self.assertRaises(ValueError):
+            c.read_packet(io.BytesIO(struct.pack('!I',len(body))+body))
+
+    def test_nonstandard_json_constants_rejected(self):
+        body=b'{"steer":NaN}'
+        with self.assertRaises(ValueError):
+            c.read_packet(io.BytesIO(struct.pack('!I',len(body))+body))
+
+    def test_step_validates_frame_hash_and_shape(self):
+        req=self.request()
+        self.assertEqual(len(c.validate_step(req)),128*96*3)
+        req['frame_b64']=base64.b64encode(b'wrong').decode()
+        with self.assertRaises(ValueError): c.validate_step(req)
+
+    def test_controller_request_rejects_goal_leak(self):
+        req=self.request(); req['goal_x']=500
+        with self.assertRaises(ValueError): c.validate_step(req)
+
+    def test_controller_request_rejects_boolean_tick(self):
+        req=self.request(); req['physics_tick']=False
+        with self.assertRaises(ValueError): c.validate_step(req)
+
+    def test_action_accepts_only_matching_request(self):
+        req=self.request(); reply=self.reply(req)
+        self.assertEqual(c.validate_action(reply,req),(0.25,False))
+
+    def test_old_epoch_reply_is_rejected(self):
+        req=self.request(); reply=self.reply(req); reply['epoch']='c'*32
+        with self.assertRaises(ValueError): c.validate_action(reply,req)
+
+    def test_wrong_profile_reply_is_rejected(self):
+        req=self.request(); reply=self.reply(req); reply['profile_sha256']='c'*64
+        with self.assertRaises(ValueError): c.validate_action(reply,req)
+
+    def test_out_of_range_or_nonfinite_action_rejected(self):
+        for bad in (1.1,float('nan'),float('inf'),True):
+            req=self.request(); reply=self.reply(req); reply['action']['steer']=bad
+            with self.assertRaises(ValueError): c.validate_action(reply,req)
+
+    def test_action_id_is_not_boolean(self):
+        req=self.request(); reply=self.reply(req); reply['step_id']=False
+        with self.assertRaises(ValueError): c.validate_action(reply,req)
+
+    def test_wrong_neural_step_count_rejected(self):
+        req=self.request(); reply=self.reply(req); reply['neural_steps_done']=4
+        with self.assertRaises(ValueError): c.validate_action(reply,req)
+
+    def test_wilson_interval_is_not_a_learning_result(self):
+        lo,hi=c.wilson(48,64)
+        self.assertTrue(0.62 < lo < 0.64)
+        self.assertTrue(0.83 < hi < 0.85)
+        with self.assertRaises(ValueError): c.wilson(1,0)
+
+if __name__=='__main__':
+    unittest.main(verbosity=2)
+#+end_src
+
+** Proposed desktop configuration
+
+These are starting values and an explicit sensor/controller contract, not tuned parameters. The default =fixture= mode makes the absence of a provided neural model visible. Never silently upgrade that label because a renderer is running.
+
+#+name: desktop-configuration
+#+begin_src toml :tangle config/desktop.toml :mkdirp yes :eval never-export
+# Proposed defaults, not measured performance or a trained controller.
+[world]
+width_px = 640
+height_px = 360
+collision_cell_px = 4
+geometry_units_per_px = 256
+
+[simulation]
+physics_hz = 100
+physics_ticks_per_decision = 10
+neural_dt_ms = 20
+neural_steps_per_decision = 5
+render_hz_target = 60
+wall_time_backlog_cap_ms = 50
+worker_warning_ms = 250
+worker_fault_ms = 2000
+
+[body]
+half_width_px = 6
+half_height_px = 8
+max_horizontal_speed_px_s = 48
+horizontal_acceleration_px_s2 = 240
+gravity_px_s2 = 360
+max_fall_speed_px_s = 180
+jump_speed_px_s = 144
+jump_enabled = false
+autostep_height_px = 4
+collision_substep_max_px = 2
+
+[sensor]
+profile = "cutaway-v1"
+width = 128
+height = 96
+world_pixels_per_sample_axis = 2
+padding_rgb = [16, 18, 22]
+actor_visible = false
+hud_visible = false
+mirror_with_heading = false
+terrain_occludes = false
+
+[editor]
+pause_on_stroke = true
+solid_radius_min_px = 4
+solid_radius_max_px = 24
+visual_radius_min_px = 1
+visual_radius_max_px = 24
+max_polyline_points = 2048
+actor_guard_px = 4
+max_undo_transactions = 64
+
+[controller]
+mode = "fixture"
+learning = false
+max_inflight = 1
+max_message_bytes = 1048576
+#+end_src
+
+** First-level fixture
+
+The first level has a 96-pixel gap and disabled jumping. It is a geometry fixture, not a demonstrated neural solution. The protected goal region prevents painting over the destination; the goal itself remains a host-side overlap rule. Add only experimentally validated cues after G2.
+
+#+name: first-level-fixture
+#+begin_src json :tangle levels/01_bridge.json :mkdirp yes :eval never-export
+{
+  "schema": 1,
+  "id": "01_bridge",
+  "title": "A bridge is only half an argument",
+  "world_px": [640, 360],
+  "cell_px": 4,
+  "spawn_center_px": [64, 272],
+  "base_solid_rects_px": [[0, 280, 192, 80], [288, 280, 352, 80]],
+  "goal_rect_px": [560, 240, 24, 40],
+  "hazard_rects_px": [[192, 352, 96, 8]],
+  "protected_rects_px": [[0, 0, 640, 4], [0, 0, 4, 360], [636, 0, 4, 360], [552, 232, 40, 48]],
+  "initial_visual_primitives": [],
+  "tools": ["solid_brush", "visual_brush", "erase_solid", "erase_visual"],
+  "jump_enabled": false,
+  "max_simulated_seconds": 45,
+  "notes": "Geometry fixture only. No successful neural traversal or lure preference has been established. Add only cues that pass the separate steering assay. Goal overlap is a host-side win condition, not controller input."
+}
+#+end_src
+
+* Sources and verification limits
+:PROPERTIES:
+:CUSTOM_ID: sources
+:END:
+
+Sources were inspected on 12 September 2026. Repository links below point to moving branches unless a release URL is stated. Pin commit IDs and compute file/profile hashes when implementation starts; a URL alone is not a reproducibility lock. Documentation review is not execution, benchmarking, or independent biological validation.
+
+The architecture, timings, tool behavior, level layout, tests, and implementation milestones are proposed engineering choices. Empirical claims are restricted to the supplied reference checks. No model weights, biological recordings, upstream source copies, fonts, ROMs, or third-party art are bundled.
+
+[fn:bevy] Bevy crate documentation, version displayed 0.19.1; feature profiles and public engine API. [[https://docs.rs/bevy/latest/bevy/][Primary source]]. Accessed 12 September 2026.
+
+[fn:malecns] MaleCNS project, dataset and access overview. [[https://male-cns.janelia.org/][Primary source]]. Accessed 12 September 2026.
+
+[fn:flydeps] Fly64 dependency declaration, reviewed as an upstream reference rather than a resolved environment. [[https://raw.githubusercontent.com/ornata/fly/main/requirements.txt][Primary source]]. Accessed 12 September 2026.
+
+[fn:cpu] Bevy official CPU draw example; CPU-authored image data rendered as a texture. [[https://bevy.org/examples/2d-rendering/cpu-draw/][Primary source]]. Accessed 12 September 2026.
+
+[fn:retina] Fly64 sensory-projection implementation; six-face image-atlas contract and modeled projection. [[https://raw.githubusercontent.com/ornata/fly/main/fly64/retina.py][Primary source]]. Accessed 12 September 2026.
+
+[fn:flyreadme] Fly64 project README; author descriptions, modeling boundaries, and absence of a trained game objective. [[https://github.com/ornata/fly][Primary source]]. Accessed 12 September 2026.
+
+[fn:doom] DOOMFLY README; experiment status, validation gates, and stated limitations. [[https://raw.githubusercontent.com/nftechie/doomfly/main/README.md][Primary source]]. Accessed 12 September 2026.
+
+[fn:flymodel] Fly64 model implementation; mutable simulation and decoder state. [[https://raw.githubusercontent.com/ornata/fly/main/fly64/model.py][Primary source]]. Accessed 12 September 2026.
+
+[fn:flydata] Fly64 data importer; filtering, graph preparation, and cache metadata. [[https://raw.githubusercontent.com/ornata/fly/main/fly64/data.py][Primary source]]. Accessed 12 September 2026.
+
+[fn:causality] Fly64 causality-validation script; live/frozen/disconnected comparisons. [[https://raw.githubusercontent.com/ornata/fly/main/scripts/validate_causality.py][Primary source]]. Accessed 12 September 2026.
+
+[fn:downloads] MaleCNS official downloads; table choices, listed sizes, and dataset license. [[https://male-cns.janelia.org/download/][Primary source]]. Accessed 12 September 2026.
+
+[fn:license] GitHub documentation on repository licensing and the distinction between public visibility and permission to reuse. [[https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository][Primary source]]. Accessed 12 September 2026.
+
+[fn:flynotes] Fly64 technical notes; reported retained graph size and modeling choices. [[https://raw.githubusercontent.com/ornata/fly/main/docs/technical-notes.md][Primary source]]. Accessed 12 September 2026.
+
+[fn:csr] SciPy CSR matrix documentation; row-oriented compressed sparse storage. [[https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_matrix.html][Primary source]]. Accessed 12 September 2026.
+
+[fn:csc] SciPy CSC matrix documentation; column-oriented compressed sparse storage. [[https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csc_matrix.html][Primary source]]. Accessed 12 September 2026.
+
+[fn:socket] Python standard-library socket documentation. [[https://docs.python.org/3/library/socket.html][Primary source]]. Accessed 12 September 2026.
+
+[fn:fixed] Bevy official fixed-timestep physics and interpolation example. [[https://bevy.org/examples/movement/physics-in-fixed-timestep/][Primary source]]. Accessed 12 September 2026.
+
+[fn:rng] NumPy BitGenerator.state documentation; complete random-generator state. [[https://numpy.org/doc/stable/reference/random/bit_generators/generated/numpy.random.BitGenerator.state.html][Primary source]]. Accessed 12 September 2026.
+
+[fn:npload] NumPy load documentation; array loading and allow_pickle controls. [[https://numpy.org/doc/stable/reference/generated/numpy.load.html][Primary source]]. Accessed 12 September 2026.
