@@ -1,6 +1,10 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")/.."
+if [ "$(uname -s)" != Darwin ]; then
+  echo 'The Rust/Metal application requires macOS.' >&2
+  exit 1
+fi
 uv sync --locked --python 3.12
 mkdir -p data/raw
 base='https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data/flat-connectome'
@@ -17,5 +21,7 @@ if [ ! -f assets/brain_atlas.json ]; then
   .venv/bin/python -m controller.brainworker.anatomy
 fi
 .venv/bin/python -m controller.brainworker.prepare
-.venv/bin/python -m controller.brainworker.tutorial
-cargo build --locked -p fly-and-you
+.venv/bin/python -m controller.brainworker.export_rust
+cargo build --release --locked -p fly-brain-worker
+target/release/fly-brain-worker --prepare-tutorial
+cargo build --workspace --locked

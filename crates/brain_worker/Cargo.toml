@@ -1,0 +1,11 @@
+[package]
+name = "fly-brain-worker"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+brain_core = { path = "../brain_core" }
+wire_types = { path = "../wire_types" }
+world_core = { path = "../world_core" }
+serde.workspace = true
+serde_json.workspace = true

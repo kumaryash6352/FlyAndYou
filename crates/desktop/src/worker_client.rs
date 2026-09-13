@@ -80,14 +80,17 @@ impl Worker {
     pub fn launch(root: &Path, run_name: &str) -> Result<Self, String> {
         std::fs::create_dir_all(root.join("runs")).map_err(|e| e.to_string())?;
         let log = std::fs::File::create(root.join("runs/worker.log")).map_err(|e| e.to_string())?;
-        let mut child = ProcessCommand::new(root.join(".venv/bin/python"))
+        let sibling = std::env::current_exe().ok().and_then(|p| {
+            p.parent()
+                .filter(|p| p.file_name().is_some_and(|name| name == "MacOS"))
+                .map(|p| p.join("fly-brain-worker"))
+        });
+        let executable = sibling
+            .filter(|p| p.is_file())
+            .unwrap_or_else(|| root.join("target/release/fly-brain-worker"));
+        let mut child = ProcessCommand::new(executable)
             .current_dir(root)
-            .args([
-                "-m",
-                "controller.brainworker.service",
-                "--runs",
-                &format!("runs/{run_name}"),
-            ])
+            .args(["--runs", &format!("runs/{run_name}")])
             .stdout(Stdio::piped())
             .stderr(Stdio::from(log))
             .spawn()

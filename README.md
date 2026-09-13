@@ -6,7 +6,7 @@ A native **Bevy 0.19.1 + bevy-egui 0.42.0** drawing platformer: a tiny black fly
 
 ## Play
 
-On this machine, open **FlyAndYou.app** in this folder. The local neural graph and Python environment are already prepared. Keep the app beside the project; it uses `.venv` and `data/cache` here.
+On this machine, open **FlyAndYou.app** in this folder. The local neural graph is already prepared. Play uses the bundled Rust/Candle Metal worker; Python is used for data preparation and reference checks. Keep the app beside the project: it uses the prepared data and source/provenance files here.
 
 From a terminal:
 
@@ -46,7 +46,7 @@ Drawing stays live. Completed fragments commit at decision boundaries, and Undo 
 
 ## Set up a fresh checkout
 
-Install Rust/Cargo, Python 3.12 and `uv`, then:
+On macOS with Metal (validated on Apple Silicon), install Rust/Cargo, Python 3.12 and `uv`, then:
 
 ```sh
 ./scripts/setup.sh
@@ -57,26 +57,30 @@ Setup downloads about 1.2 GB of official MaleCNS tables, builds the sparse graph
 
 ## What drives it
 
-`world_core` owns deterministic terrain, physics, rendering, and snapshots. `desktop` owns the Bevy app, bevy-egui drawing tools, and bounded background worker communication. `wire_types` enforces the image-only step protocol. `controller/brainworker` loads a sparse graph from the official MaleCNS v1.0 release.
+`world_core` owns deterministic terrain, physics, rendering, and snapshots. `desktop` owns the Bevy app, bevy-egui drawing tools, and bounded background worker communication. `wire_types` enforces the image-only step protocol. `brain_core` runs the sparse graph through Candle/Metal, and `brain_worker` serves the strict localhost protocol. `controller/brainworker` prepares official MaleCNS v1.0 data and retains the Python reference model.
 
-The prepared graph contains **164,606 traced neurons and 25,558,671 connections**, with **4,107 selected sensory inputs**. Five 20 ms model steps precede ten 10 ms physics steps. The CPU worker takes roughly 120 ms per decision on this machine, so simulated time advances slower than wall time. The UI remains responsive while it waits.
+The prepared graph contains **164,606 traced neurons and 25,558,671 connections**, with **4,107 selected sensory inputs**. The target is **25 decisions per wall-clock second**: two 20 ms neural steps and four 10 ms physics steps per decision. Physics waits for the matching action, while the coordinator counts that wait toward the 40 ms deadline. It carries ordinary frame overshoot and bounds backlog to 80 ms; overload slows simulation without skipping neural steps or applying stale actions. The UI stays responsive.
 
 The model uses declared leaky rate dynamics, approximate transmitter signs, two engineered RGB chromatic channels, and a fixed approach/retreat/search/hold motor interface. The channels use interleaved sensory inputs; 2,183 approach and 2,139 avoidance relay neurons are selected by their actual synaptic connectivity. Their activity above a fixed neutral baseline supplies movement evidence. The current controller profile is `eye-level-v2 / ChromaticValenceV1`. Receptor coordinates were unavailable for the selected population; their image sampling uses an explicit deterministic stratified mapping. Learning is off. The upper-right display uses two projections of 336 actual MaleCNS neuron skeletons. Blue shows sampled structure; orange highlights the strongest local increases in corresponding modeled activity above its recent baseline. Display contrast emphasizes the upper tenth of these increases, suppressing a uniform orange wash as the graph wakes. It is a scan-like skeleton projection, not a CT volume or an animation driven by walking speed. The lower-right image is the exact 128 × 96 RGB frame sent to the worker; before the first step, or after a paused edit, it previews the next look. There are no goal coordinates, object labels, or paths in its play requests.
 
 ## Current state
 
-Six levels are implemented in the approved order: First Flight, Borrowed Ground, Touch and Go, Pull the Rug, Swat Team, and The Long Way Home. Use the toolbox chooser to replay any level, or **Next level / N** after a win. Later levels begin paused and convey their rules through labels and visible behavior; the final level combines familiar rules. [Campaign rules and verification](levels/README.md). Maximum horizontal speed is 176 world pixels/s, acceleration is 1,056, and gravity is 1,100. Exploration uses 52% motor output; retreat uses 85% for eight decisions (0.8 simulated seconds). The body acceleration cap smooths velocity without an additional motor low-pass. The neural step count, physics timestep, and serial decision schedule are unchanged. Worker latency still limits smoothness; decoupling physics or replacing the neural compute backend is a separate technical decision. The [Rust/Candle feasibility evaluation](experiments/candle-evaluation/README.md) measures a custom sparse Metal kernel on the full graph; it remains an experimental probe and has not replaced the game worker.
+Six levels are implemented in the approved order: First Flight, Borrowed Ground, Touch and Go, Pull the Rug, Swat Team, and The Long Way Home. Use the toolbox chooser to replay any level, or **Next level / N** after a win. Later levels begin paused and convey their rules through labels and visible behavior; the final level combines familiar rules. [Campaign rules and verification](levels/README.md). Maximum horizontal speed is 176 world pixels/s, acceleration is 1,056, and gravity is 1,100. Exploration uses 52% motor output; retreat uses 85% for 20 decisions (0.8 simulated seconds). Search reverses after 88 decisions (3.52 s), commits for ten (0.4 s), and rearms red retreat after eight clear observations (0.32 s). The body acceleration cap smooths velocity without an additional motor low-pass. Neural and physics timesteps remain 20 ms and 10 ms; only the observation/decision cadence changes. The full graph stays float32 and sparse, with an exact NumPy-compatible PCG64 normal stream. [The original feasibility evaluation](experiments/candle-evaluation/README.md) is historical; the production worker now lives in the Rust workspace. The Python worker remains a slower legacy reference, not a silent fallback.
 
-Older `SurfaceRetinaV1` profiles must be regenerated with `.venv/bin/python -m controller.brainworker.prepare`. The new profile rejects incompatible brain bookmarks. Current bookmarks include retreat commitment, rearm state, search state, neural activity, and RNG state.
+Older `SurfaceRetinaV1` profiles must be regenerated with `.venv/bin/python -m controller.brainworker.prepare`. The new profile rejects incompatible brain bookmarks. The Rust export is `data/cache/malecns-rust-v1` and uses protocol version 2. Runtime fingerprints include the backend and model implementation. Current bookmarks include retreat commitment, rearm state, search state, neural activity, and complete RNG state; legacy Python bookmarks are rejected.
+
+The final packaged Rust/Metal build sustained **25.0008 decisions/s** across 1,260 decisions. Median worker exchange was 9.2 ms, p95 13.0 ms, with a 71.9 ms maximum in that run. A 115-decision Python comparison measured maximum checked activity error of 1.19×10⁻⁷, steering error of 1.57×10⁻⁸, matching motor modes and exact RNG/checkpoint replay. These are local measurements, not a guarantee for every input or machine. [Production verification and limits](docs/rust-brain-25hz.md).
 
 The previous slower build completed a native bridge-and-ink playthrough in 10.5 simulated seconds. That result is historical after the pace and editing changes. Current verification emphasizes native drawing, danger, and visual response. Broad usability, biological fidelity, and learning remain unestablished.
 
 The earlier cutaway-view experiments are historical and deliberately refuse to run against the new perspective controller. Their results do not validate this version. `config/desktop.toml` documents defaults, `levels/01_bridge.json` describes the tutorial geometry, and `crates/world_core/src/levels.rs` defines the campaign. These are baked levels; the runtime does not load arbitrary level files or the TOML file.
 
-For short verification, run `./scripts/verify.sh`. Add `--full` for the actual full-graph socket/checkpoint check. Native play is the primary check for feel. Run journals, recent input frames, and bookmarks are kept in `runs/play-*`.
+For short verification, run `./scripts/verify.sh`. Add `--full` for real Rust/Metal accuracy, RNG, socket/checkpoint/replay and legacy Python transport checks. Native play is the primary check for feel. Run journals, recent input frames, and bookmarks are kept in `runs/play-*`.
 
 ## Data and credits
 
 Connectivity and annotations come from the [MaleCNS v1.0 dataset](https://male-cns.janelia.org/download/), a collaboration of FlyEM / HHMI Janelia, the University of Cambridge, MRC Laboratory of Molecular Biology, and Google Research. The dataset is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Source URLs, SHA-256 hashes, selection rules, and transformations are recorded in `data/source.lock.json`, the cache manifest, and `assets/brain_atlas.json`. The display atlas samples up to 600 branch segments per selected neuron and clips morphology to the brain; regenerate it with `python -m controller.brainworker.anatomy` after setup. The game filters, normalizes, assigns approximate signs, and adds its own sensory and motor mappings; those modifications are not claims made by the dataset authors.
 
 Game artwork is original, generated directly by the renderer. The supplied Org guide and extracted reference examples remain in the repository; the implementation notes at the beginning of the guide describe the subsequent user-directed changes.
+
+The Rust random sampler includes adapted NumPy/Julia/PCG code; retain [third-party notices](THIRD_PARTY_NOTICES.md) when distributing the application.

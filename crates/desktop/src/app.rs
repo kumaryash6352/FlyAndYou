@@ -42,6 +42,7 @@ pub struct Desktop {
     pub help: bool,
     pub details: bool,
     pub last_frame: Instant,
+    journal_start: Instant,
     pub trail: Vec<[f64; 2]>,
     pub trace: Vec<f32>,
     pub restore_world: Option<World>,
@@ -95,6 +96,7 @@ impl Desktop {
             help: false,
             details: false,
             last_frame: Instant::now(),
+            journal_start: Instant::now(),
             trail: vec![],
             trace: vec![],
             restore_world: None,
@@ -123,7 +125,8 @@ impl Desktop {
             self.ink_radius
         };
     }
-    pub fn log(&mut self, value: serde_json::Value) {
+    pub fn log(&mut self, mut value: serde_json::Value) {
+        value["wall_ms"] = (self.journal_start.elapsed().as_secs_f64() * 1000.).into();
         if let Some(f) = &mut self.journal {
             let _ = writeln!(f, "{value}");
         }
@@ -140,7 +143,7 @@ impl Desktop {
     pub fn update(&mut self) {
         let dt = self.last_frame.elapsed().as_secs_f64();
         self.last_frame = Instant::now();
-        let mut accepted_action = false;
+        self.sim.advance(dt);
         loop {
             let event = self.worker.as_ref().and_then(|w| w.rx.try_recv().ok());
             let Some(event) = event else { break };
@@ -173,7 +176,7 @@ impl Desktop {
                         self.run_dir.join("initial.world.json"),
                         self.sim.world.snapshot(),
                     );
-                    let manifest = serde_json::json!({"mode":"MaleCNS fixed controller","learning":false,"profile_sha256":self.sim.profile,"sensor":world_core::SENSOR_PROFILE,"image_log":"rolling 256 exact RGB frames","platform":std::env::consts::OS,"epoch":self.sim.epoch});
+                    let manifest = serde_json::json!({"mode":"MaleCNS fixed controller","learning":false,"decisions_hz":25,"neural_steps":2,"physics_ticks":4,"profile_sha256":self.sim.profile,"sensor":world_core::SENSOR_PROFILE,"image_log":"rolling 256 exact RGB frames","platform":std::env::consts::OS,"epoch":self.sim.epoch});
                     let _ =
                         std::fs::write(self.run_dir.join("manifest.json"), manifest.to_string());
                 }
@@ -183,7 +186,6 @@ impl Desktop {
                     ms,
                 } => match self.sim.accept(&reply) {
                     Ok(true) => {
-                        accepted_action = true;
                         self.latency = ms;
                         self.telemetry = telemetry;
                         self.trace.push(reply.action.steer as f32);
@@ -254,7 +256,7 @@ impl Desktop {
                 }
             }
         }
-        self.sim.advance(if accepted_action { 0.0 } else { dt });
+        self.sim.advance(0.0);
         if self.sim.phase == Phase::Paused && self.restore_name.is_none() && self.focused {
             self.tutorial.advance(dt.min(0.25) as f32);
         }

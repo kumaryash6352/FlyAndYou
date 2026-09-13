@@ -1,0 +1,90 @@
+{
+  "date": "2026-09-13",
+  "machine": "Apple M3 Pro, macOS, Candle 0.11.0 Metal",
+  "numerical_and_transport": {
+    "decisions_compared": 115,
+    "max_activity_error": 1.1920928955078125e-07,
+    "max_steer_error": 1.567335228269684e-08,
+    "motor_modes": [
+      "approach",
+      "hold",
+      "retreat",
+      "search"
+    ],
+    "rng_exact": true,
+    "retreat_checkpoint_replay_exact": true,
+    "disconnected_color_actions_equal": true,
+    "protocol_version_1_rejected": true,
+    "latency_ms": {
+      "median": 9.567874949425459,
+      "p95": 15.717729344032703,
+      "max": 44.32037507649511
+    },
+    "profile_sha256": "c683c1c65076d80ecde4928bc5e1730037de036a8ad396f43c5e957990412ca4"
+  },
+  "native": {
+    "run": "runs/play-97a0ededfd9a",
+    "actions": 499,
+    "decision_hz": 25.075701049002678,
+    "duration_s": 19.8598635,
+    "latency_ms": {
+      "median": 9.321667,
+      "p95": 13.015666,
+      "max": 108.100583
+    },
+    "four_physics_ticks_each": true,
+    "profile": "c683c1c65076d80ecde4928bc5e1730037de036a8ad396f43c5e957990412ca4",
+    "last_step": 498,
+    "faults": [],
+    "observation_hz": 24.948676895703517,
+    "first_decision_ms": 108.100583,
+    "steady_max_ms": 20.557459,
+    "pause_holds_tick": true,
+    "native_bookmark_restored_tick": 1996,
+    "live_red_ink_revision": 12,
+    "intentional_worker_termination": true,
+    "reset_recovered_actions": 47,
+    "measurement_scope": "First uninterrupted native play interval, steps 0 through 498; interaction checks followed."
+  },
+  "graceful_shutdown_verified": true,
+  "environment": {
+    "chip": "Apple M3 Pro",
+    "memory_bytes": 19327352832,
+    "macos": "26.0.1",
+    "architecture": "arm64",
+    "python": "3.12.11",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1"
+  },
+  "verification": {
+    "command": "./scripts/verify.sh --full",
+    "exit_code": 0,
+    "rust_tests_passed": 54,
+    "reference_tests_passed": 30,
+    "python_unit_tests_passed": 16,
+    "opt_in_full_graph_checks_passed": 2,
+    "note": "The ordinary Python discovery skips the two opt-in full-graph cases; both are run explicitly by --full.",
+    "log": "runs/rust-25hz-suite.log"
+  },
+  "package": {
+    "command": "./scripts/package-macos.sh",
+    "exit_code": 0,
+    "desktop_sha256": "655a47726998ec6d80f9ac1d5b695c772552fbf0d454c93b9f45201eff7e007e",
+    "worker_sha256": "44dfa6bf129d4f5a330f3231fef56c789e388b874d8eab0a10fecdcc520f5716"
+  },
+  "packaged_native_repeat": {
+    "run": "runs/play-9eaf5f9a2daa",
+    "actions": 1260,
+    "duration_s": 50.358471333,
+    "decision_hz": 25.00075889267463,
+    "observation_hz": 24.96935100172081,
+    "latency_ms": {
+      "median": 9.1855625,
+      "p95": 12.9955,
+      "max": 71.87120900000001
+    },
+    "profile_sha256": "c683c1c65076d80ecde4928bc5e1730037de036a8ad396f43c5e957990412ca4",
+    "four_physics_ticks_each": true,
+    "launch": "Opened from Finder; Enter, intro, live solid drawing and pause verified using the packaged executable copies."
+  }
+}

@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/world_core", "crates/wire_types", "crates/desktop"]
+members = ["crates/world_core", "crates/wire_types", "crates/desktop", "crates/brain_core", "crates/brain_worker"]
 resolver = "2"
 
 [workspace.dependencies]
@@ -9,6 +9,8 @@ sha2 = "0.10"
 
 [profile.dev]
 opt-level = 1
+debug = 0
+incremental = false
 
 [profile.dev.package."*"]
 opt-level = 2

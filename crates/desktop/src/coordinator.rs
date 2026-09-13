@@ -1,5 +1,5 @@
 use std::time::Instant;
-use wire_types::{Reply, Step};
+use wire_types::{PHYSICS_TICKS, Reply, Step};
 use world_core::{Action, Outcome, World};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Phase {
@@ -81,7 +81,6 @@ impl Coordinator {
         self.pending = Some(r.clone());
         self.phase = Phase::Waiting;
         self.since = Instant::now();
-        self.accumulator = 0.;
         Some((r, rgb))
     }
     pub fn accept(&mut self, r: &Reply) -> Result<bool, String> {
@@ -101,19 +100,25 @@ impl Coordinator {
         };
         self.pending = None;
         self.phase = Phase::Applying;
-        self.remaining = 10;
-        self.accumulator = 0.;
+        self.remaining = PHYSICS_TICKS as u8;
         Ok(true)
     }
     pub fn advance(&mut self, seconds: f64) {
-        if self.phase != Phase::Applying {
+        if !matches!(self.phase, Phase::Waiting | Phase::Applying) {
             return;
         }
-        self.accumulator = (self.accumulator + seconds.max(0.)).min(0.05);
-        while self.accumulator >= 0.01 && self.remaining > 0 {
+        // Count wall time during neural work, but never advance unvalidated physics.
+        // Retain frame overshoot across decisions; cap stalls at two 40 ms blocks.
+        if seconds.is_finite() {
+            self.accumulator = (self.accumulator + seconds.max(0.)).min(0.08);
+        }
+        if self.phase == Phase::Waiting {
+            return;
+        }
+        while self.accumulator + 1e-12 >= 0.01 && self.remaining > 0 {
             self.world.step(self.action);
             self.remaining -= 1;
-            self.accumulator -= 0.01;
+            self.accumulator = (self.accumulator - 0.01).max(0.);
             // Complete the aligned block even when the body reaches a terminal outcome.
             if self.world.outcome != Outcome::Running {
                 self.world.tick += self.remaining as u64;
@@ -124,7 +129,9 @@ impl Coordinator {
         if self.remaining == 0 {
             self.step_id += 1;
             self.phase = Phase::Paused;
-            self.accumulator = 0.;
+            if self.want_pause {
+                self.accumulator = 0.;
+            }
         }
     }
     pub fn reset(&mut self) {
@@ -195,7 +202,7 @@ mod tests {
         let (r, _) = c.request().unwrap();
         c.pause();
         c.accept(&Reply::for_request(&r, 0.52)).unwrap();
-        for _ in 0..10 {
+        for _ in 0..PHYSICS_TICKS {
             c.advance(0.01);
         }
         c.reset();
@@ -217,10 +224,10 @@ mod tests {
         let a = Reply::for_request(&r, 1.);
         assert!(c.accept(&a).unwrap());
         assert!(!c.accept(&a).unwrap());
-        for _ in 0..10 {
+        for _ in 0..PHYSICS_TICKS {
             c.advance(0.01);
         }
-        assert_eq!(c.world.tick, 10);
+        assert_eq!(c.world.tick, PHYSICS_TICKS);
         assert!(!c.accept(&a).unwrap());
     }
     #[test]
@@ -229,11 +236,11 @@ mod tests {
         let (r, _) = c.request().unwrap();
         c.pause();
         c.accept(&Reply::for_request(&r, 1.)).unwrap();
-        for _ in 0..10 {
+        for _ in 0..PHYSICS_TICKS {
             c.advance(0.01);
         }
         assert_eq!(c.phase, Phase::Paused);
-        assert_eq!(c.world.tick, 10);
+        assert_eq!(c.world.tick, PHYSICS_TICKS);
         assert!(c.request().is_none());
         let h = c.world.state_hash();
         c.advance(500.);
@@ -246,5 +253,33 @@ mod tests {
         c.accept(&Reply::for_request(&r, 1.)).unwrap();
         c.advance(50.);
         assert!(c.world.tick <= 5);
+    }
+    #[test]
+    fn waiting_latency_counts_toward_the_40ms_deadline() {
+        let mut c = ready();
+        let (r, _) = c.request().unwrap();
+        c.advance(0.03);
+        assert_eq!(c.world.tick, 0);
+        c.accept(&Reply::for_request(&r, 0.)).unwrap();
+        c.advance(0.);
+        assert_eq!(c.world.tick, 3);
+        c.advance(0.01);
+        assert_eq!(c.world.tick, 4);
+        assert_eq!(c.phase, Phase::Paused);
+    }
+    #[test]
+    fn sixty_hz_rendering_delivers_twenty_five_decisions_per_second() {
+        let mut c = ready();
+        c.request().unwrap();
+        for _ in 0..180 {
+            c.advance(1. / 60.);
+            if let Some(r) = c.pending.clone() {
+                c.accept(&Reply::for_request(&r, 0.)).unwrap();
+                c.advance(0.);
+            }
+            c.request();
+        }
+        assert_eq!(c.step_id, 75);
+        assert_eq!(c.world.tick, 300);
     }
 }

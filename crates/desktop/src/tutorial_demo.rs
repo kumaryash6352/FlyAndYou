@@ -38,9 +38,9 @@ pub struct ColorDemos {
 impl ColorDemos {
     pub fn load(root: &Path, profile: &str, anatomy_count: usize) -> Result<Self, String> {
         let data =
-            std::fs::read(root.join("data/cache/tutorial.json")).map_err(|e| e.to_string())?;
+            std::fs::read(root.join("data/cache/tutorial-rust.json")).map_err(|e| e.to_string())?;
         let recording: Recording = serde_json::from_slice(&data).map_err(|e| e.to_string())?;
-        if recording.schema != 1
+        if recording.schema != 2
             || recording.sensor != SENSOR_PROFILE
             || recording.profile_sha256 != profile
             || recording.seed != 7
@@ -50,11 +50,14 @@ impl ColorDemos {
             return Err("Color demonstration profile changed; run scripts/setup.sh.".into());
         }
         for name in [
-            "controller/brainworker/model.py",
-            "controller/brainworker/chromatic.py",
-            "controller/brainworker/motor.py",
-            "controller/brainworker/tutorial.py",
-            "assets/brain_atlas.json",
+            "crates/brain_core/src/model.rs",
+            "crates/brain_core/src/profile.rs",
+            "crates/brain_core/src/motor.rs",
+            "crates/brain_core/src/rng.rs",
+            "crates/brain_core/src/backend.rs",
+            "crates/brain_core/src/step.metal",
+            "crates/brain_core/Cargo.toml",
+            "crates/brain_worker/src/main.rs",
         ] {
             let bytes = std::fs::read(root.join(name)).map_err(|e| e.to_string())?;
             if recording.sources.get(name) != Some(&hash(&bytes)) {
@@ -74,7 +77,7 @@ impl ColorDemos {
                 || scene.rgb_sha256 != hash(&eye_rgb)
                 || scene.samples.len() != 21
                 || scene.samples.iter().enumerate().any(|(i, s)| {
-                    s.ticks != i as u64 * 5
+                    s.ticks != i as u64 * 10
                         || s.anatomy_activity.len() != anatomy_count
                         || s.anatomy_activity
                             .iter()

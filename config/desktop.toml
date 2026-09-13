@@ -6,11 +6,12 @@ geometry_units_per_px = 256
 
 [simulation]
 physics_hz = 100
-physics_ticks_per_decision = 10
+physics_ticks_per_decision = 4
+decisions_hz = 25
 neural_dt_ms = 20
-neural_steps_per_decision = 5
+neural_steps_per_decision = 2
 render_hz_target = 60
-wall_time_backlog_cap_ms = 50
+wall_time_backlog_cap_ms = 80
 worker_warning_ms = 250
 worker_fault_ms = 2000
 
@@ -49,6 +50,9 @@ max_undo_transactions = 64
 
 [controller]
 mode = "malecns_fixed"
+backend = "candle-metal-csr-f32-v1"
+rng = "numpy-pcg64-normal-f64-v1"
+protocol_version = 2
 learning = false
 max_inflight = 1
 max_message_bytes = 1048576
@@ -58,11 +62,11 @@ profile = "eye-level-v2 / ChromaticValenceV1"
 readout_scale = 0.025
 explore_speed = 0.52
 retreat_speed = 0.85
-retreat_decisions = 8
-search_decisions = 35
-search_commit_decisions = 4
+retreat_decisions = 20
+search_decisions = 88
+search_commit_decisions = 10
 enter_threshold = 0.08
 release_threshold = 0.03
 red_dominance = 1.25
-clear_decisions = 3
+clear_decisions = 8
 approach_half_response = 0.25

@@ -1,0 +1,13 @@
+[package]
+name = "brain_core"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+wire_types = { path = "../wire_types" }
+candle-core = { version = "=0.11.0", features = ["metal"] }
+candle-metal-kernels = "=0.11.0"
+objc2-metal = "0.3.2"
+base64 = "0.22"

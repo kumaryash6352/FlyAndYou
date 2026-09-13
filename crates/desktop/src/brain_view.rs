@@ -88,6 +88,13 @@ impl BrainView {
                 self.baseline = vec![0.0002; self.neurons.len()];
                 self.glow = vec![0.; self.neurons.len()];
             }
+            let elapsed = if self.tick != u64::MAX && tick > self.tick {
+                (tick - self.tick) as f32 / 5.
+            } else {
+                1.
+            };
+            let glow_retention = 0.45_f32.powf(elapsed);
+            let baseline_retention = 0.96_f32.powf(elapsed);
             let mut density = vec![[0f32; 2]; W * H];
             let changes: Vec<f32> = self
                 .baseline
@@ -111,8 +118,9 @@ impl BrainView {
                 // This contrast scale reveals local changes without inventing
                 // motion-driven pulses; the display holds still when paused.
                 let activation = ((changes[i] - threshold) / contrast).clamp(0., 1.);
-                self.glow[i] = activation.max(self.glow[i] * 0.45);
-                self.baseline[i] = self.baseline[i] * 0.96 + rate * 0.04;
+                self.glow[i] = activation.max(self.glow[i] * glow_retention);
+                self.baseline[i] =
+                    self.baseline[i] * baseline_retention + rate * (1. - baseline_retention);
                 let glow = self.glow[i];
                 for &(p, depth) in pixels {
                     density[p][0] += depth * 0.32;

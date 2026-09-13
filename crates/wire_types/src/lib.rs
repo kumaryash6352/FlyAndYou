@@ -2,9 +2,18 @@ use base64::{Engine, engine::general_purpose::STANDARD};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use sha2::{Digest, Sha256};
 use std::io::{Read, Write};
+pub const PROTOCOL_VERSION: u32 = 2;
+pub const NEURAL_STEPS: u32 = 2;
+pub const PHYSICS_TICKS: u64 = 4;
+pub const DECISION_SECONDS: f64 = 0.04;
 pub const MAX_MESSAGE: usize = 1_048_576;
 pub fn hash(b: &[u8]) -> String {
     format!("{:x}", Sha256::digest(b))
+}
+pub fn valid_hex(s: &str, length: usize) -> bool {
+    s.len() == length
+        && s.bytes()
+            .all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c))
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -24,6 +33,28 @@ pub struct Step {
     pub frame_b64: String,
 }
 impl Step {
+    pub fn validate(&self) -> Result<Vec<u8>, String> {
+        if self.kind != "step"
+            || self.version != PROTOCOL_VERSION
+            || !valid_hex(&self.epoch, 32)
+            || !valid_hex(&self.profile_sha256, 64)
+            || !valid_hex(&self.rgb_sha256, 64)
+            || self.width != 128
+            || self.height != 96
+            || self.format != "rgb8"
+            || self.neural_steps != NEURAL_STEPS
+            || self.step_id.checked_mul(PHYSICS_TICKS) != Some(self.physics_tick)
+        {
+            return Err("Invalid 25 Hz observation identity or dimensions".into());
+        }
+        let rgb = STANDARD
+            .decode(&self.frame_b64)
+            .map_err(|e| e.to_string())?;
+        if rgb.len() != 128 * 96 * 3 || hash(&rgb) != self.rgb_sha256 {
+            return Err("Observation pixels do not match image hash".into());
+        }
+        Ok(rgb)
+    }
     pub fn new(
         epoch: String,
         step_id: u64,
@@ -34,7 +65,7 @@ impl Step {
     ) -> Self {
         Self {
             kind: "step".into(),
-            version: 1,
+            version: PROTOCOL_VERSION,
             epoch,
             step_id,
             physics_tick,
@@ -44,7 +75,7 @@ impl Step {
             width: 128,
             height: 96,
             format: "rgb8".into(),
-            neural_steps: 5,
+            neural_steps: NEURAL_STEPS,
             frame_b64: STANDARD.encode(rgb),
         }
     }
@@ -80,13 +111,13 @@ impl Reply {
             world_revision: r.world_revision,
             profile_sha256: r.profile_sha256.clone(),
             rgb_sha256: r.rgb_sha256.clone(),
-            neural_steps_done: 5,
+            neural_steps_done: NEURAL_STEPS,
             action: Action { steer, jump: false },
         }
     }
     pub fn validate(&self, r: &Step) -> Result<(), String> {
         if self.kind != "action"
-            || self.version != 1
+            || self.version != PROTOCOL_VERSION
             || self.version != r.version
             || self.epoch != r.epoch
             || self.step_id != r.step_id
@@ -94,7 +125,9 @@ impl Reply {
             || self.world_revision != r.world_revision
             || self.profile_sha256 != r.profile_sha256
             || self.rgb_sha256 != r.rgb_sha256
-            || self.neural_steps_done != 5
+            || self.neural_steps_done != NEURAL_STEPS
+            || self.neural_steps_done != r.neural_steps
+            || self.action.jump
             || !self.action.steer.is_finite()
             || self.action.steer.abs() > 1.
         {
