@@ -59,6 +59,7 @@ max_message_bytes = 1048576
 
 [music]
 enabled = true
+mix = "mono"
 volume = 0.35
 tempo_bpm = 90
 stale_after_ms = 1000

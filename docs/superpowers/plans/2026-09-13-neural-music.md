@@ -56,3 +56,12 @@ Lengthen the nervous-system dialogue from 10.4 s to 15 s across beats 9–10 (12
 - Rendered a 17 s WAV using the production synth/mapping and existing recorded neural color responses. Listening quality and native mute/volume response remain subjective checks; the rendered-sample tests cover release and volume behavior.
 - Focused review caught absent color evidence becoming zero; optional fields and a regression test now preserve unavailable input.
 - Updated only the worktree app bundle. The native QA instance was closed; the other running game was left alone.
+
+## Requested mono adjustment
+
+- [x] Collapse voice panning to one centered mix and duplicate it into both output channels; request stereo device playback with supported-format fallback.
+- [x] Verify nonzero, identical left/right samples through Rodio at 44.1/48 kHz, preserve the existing music tests, and rebuild the worktree app.
+- [x] Render a single-channel audition WAV and update the public behavior notes.
+
+All 12 focused music tests and the desktop build passed. Physical device routing
+still requires a listening check; no system audio settings were changed.

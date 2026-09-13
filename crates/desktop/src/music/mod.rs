@@ -61,6 +61,9 @@ impl Music {
         let failed = Arc::clone(&self.output_failed);
         let result = DeviceSinkBuilder::from_default_device().and_then(|builder| {
             builder
+                // Send the mono mix to both speakers, even if the device's
+                // preferred format happens to expose a single channel.
+                .with_channels(ChannelCount::new(2).unwrap())
                 .with_buffer_size(rodio::cpal::BufferSize::Fixed(512))
                 .with_error_callback(move |_| failed.store(true, Ordering::Relaxed))
                 .open_sink_or_fallback()
@@ -223,6 +226,33 @@ mod tests {
             heartbeat: 1,
             generation: 0,
         }))
+    }
+
+    #[test]
+    fn mono_music_reaches_both_stereo_channels_identically() {
+        for output_rate in [44_100, 48_000] {
+            let shared = playing();
+            let decoder = Decoder::new(shared, SampleRate::new(48_000).unwrap());
+            let (mixer, mut output) = rodio::mixer::mixer(
+                ChannelCount::new(2).unwrap(),
+                SampleRate::new(output_rate).unwrap(),
+            );
+            mixer.add(decoder);
+            let mut energy = 0.;
+            for _ in 0..output_rate / 2 {
+                let left = output.next().unwrap();
+                let right = output.next().unwrap();
+                assert_eq!(
+                    left, right,
+                    "Mono music must be centered after device conversion"
+                );
+                energy += left * left;
+            }
+            assert!(
+                energy > 0.01,
+                "Both channels must carry real music, not silence"
+            );
+        }
     }
 
     #[test]

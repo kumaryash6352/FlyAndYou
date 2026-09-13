@@ -26,7 +26,7 @@ Rough solid walls and a ceiling line the left, right, and top map edges. You can
 
 Yellow visible marks encourage approach; red marks trigger a turn and a brief committed retreat. Separate trigger and rearm thresholds prevent repeated flips while the old neural response fades. If strong red persists after retreat, the fly holds. Without strong color evidence it explores, eventually turning to search. **Brain** reveals its current decision and yellow-pull/red-push signal strengths. These color associations are explicitly engineered game rules.
 
-**Music** in the toolbox turns a quiet procedural score on or off; the adjacent slider controls volume. Live modeled activity shapes soft plucks, a buzzing tonal layer, and little rhythmic accents. Yellow-pull evidence warms the sound, red-push evidence adds tension, and changes in sampled neurons vary the phrase. Music fades when paused and restarts its phrase on reset or bookmark restore. These are authored musical mappings, not biological brain recordings. [Music behavior and implementation](docs/neural-music.md).
+**Music** in the toolbox turns a quiet mono procedural score on or off; the adjacent slider controls volume. The same mix plays through both speakers. Live modeled activity shapes soft plucks, a buzzing tonal layer, and little rhythmic accents. Yellow-pull evidence warms the sound, red-push evidence adds tension, and changes in sampled neurons vary the phrase. Music fades when paused and restarts its phrase on reset or bookmark restore. These are authored musical mappings, not biological brain recordings. [Music behavior and implementation](docs/neural-music.md).
 
 | Control | Action |
 |---|---|

@@ -132,12 +132,12 @@ impl Synth {
         if gain == 0.0 || volume == 0.0 {
             return [0.0; 2];
         }
-        // Fixed gentle panning; the sum has ample headroom even at full volume.
+        // One centered mono mix, duplicated for stereo device playback.
+        // Average the previous voice gains to retain volume and headroom.
         let level = gain * volume;
-        [
-            ((pluck * 0.85 + bed[0] + accent * 0.55) * level).clamp(-0.5, 0.5),
-            ((pluck * 0.65 + bed[1] + accent * 0.8) * level).clamp(-0.5, 0.5),
-        ]
+        let mono =
+            ((pluck * 0.75 + (bed[0] + bed[1]) * 0.5 + accent * 0.675) * level).clamp(-0.5, 0.5);
+        [mono; 2]
     }
 
     fn frames(&self, seconds: f64) -> u32 {
