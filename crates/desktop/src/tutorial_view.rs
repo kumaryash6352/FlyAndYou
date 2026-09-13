@@ -25,7 +25,7 @@ pub fn install_font(ctx: &Context) {
     }
 }
 
-fn font(ctx: &Context, size: f32) -> FontId {
+pub(crate) fn font(ctx: &Context, size: f32) -> FontId {
     let family = ctx.fonts(|f| {
         if f.families().contains(&FontFamily::Name(HAND.into())) {
             FontFamily::Name(HAND.into())

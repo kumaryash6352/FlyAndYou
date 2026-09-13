@@ -1,7 +1,7 @@
 use crate::*;
 
 /// Shared side-view paint coordinates for the pole and cloth.
-pub(crate) fn flag_pixel(x: usize, y: usize) -> Option<[u8; 3]> {
+fn original_flag_pixel(x: usize, y: usize) -> Option<[u8; 3]> {
     if (560..563).contains(&x) && (242..280).contains(&y) {
         return Some([54, 63, 48]);
     }
@@ -14,18 +14,19 @@ pub(crate) fn flag_pixel(x: usize, y: usize) -> Option<[u8; 3]> {
 }
 
 impl World {
+    pub(crate) fn flag_pixel(&self, x: usize, y: usize) -> Option<[u8; 3]> {
+        let x = x as i32 - (self.goal[0] as i32 - 560);
+        let y = y as i32 - (self.goal[1] as i32 - 240);
+        if x < 0 || y < 0 {
+            return None;
+        }
+        original_flag_pixel(x as usize, y as usize)
+    }
     pub fn paintable(&self, x: usize, y: usize) -> bool {
         if x >= WIDTH || y >= HEIGHT {
             return false;
         }
-        let i = (y / 4) * COLS + x / 4;
-        self.base[i] != 0
-            || self.solid[i] != 0
-            || flag_pixel(x, y).is_some()
-            || self
-                .hazards
-                .iter()
-                .any(|r| overlaps(*r, [x as f64, y as f64, 1., 1.]))
+        self.ray_surface((x / 4) as i32, (y / 4) as i32) || self.flag_pixel(x, y).is_some()
     }
 
     /// Ray intersection with a cylindrical pole and a billowing cloth surface.
@@ -35,7 +36,9 @@ impl World {
         let [dx, dy, dz] = ray;
         let mut hit = None;
         let mut nearest = limit;
-        let ox = self.actor.x - 560.5;
+        let offset_x = self.goal[0] - 560.;
+        let offset_y = self.goal[1] - 240.;
+        let ox = self.actor.x - (560.5 + offset_x);
         let oz = 9.;
         let a = dx * dx + dz * dz;
         let b = 2. * (ox * dx + oz * dz);
@@ -44,9 +47,9 @@ impl World {
         if disc >= 0. {
             let t = (-b - disc.sqrt()) / (2. * a);
             let y = self.actor.y + dy * t;
-            if t > 0.01 && t < nearest && (242.0..280.0).contains(&y) {
-                let nx = (self.actor.x + dx * t - 560.5).abs();
-                hit = Some((t, 561, y as usize, 0.62 + nx * 0.3));
+            if t > 0.01 && t < nearest && (242. + offset_y..280. + offset_y).contains(&y) {
+                let nx = (self.actor.x + dx * t - (560.5 + offset_x)).abs();
+                hit = Some((t, (561. + offset_x) as usize, y as usize, 0.62 + nx * 0.3));
                 nearest = t;
             }
         }
@@ -54,7 +57,7 @@ impl World {
         // not a flag pasted onto the corridor backdrop.
         for u in 0..17 {
             let wave = (u as f64 * 0.38 + self.tick as f64 * 0.09).sin() * u as f64 / 17. * 1.4;
-            let t = (562. + wave - self.actor.x) / dx;
+            let t = (562. + offset_x + wave - self.actor.x) / dx;
             if t <= 0.01 || t >= nearest {
                 continue;
             }
@@ -62,12 +65,14 @@ impl World {
             let y = self.actor.y + dy * t;
             if z >= -9. + u as f64
                 && z < -8. + u as f64
-                && (242.0..257.0).contains(&y)
-                && flag_pixel(563 + u, y as usize).is_some()
+                && (242. + offset_y..257. + offset_y).contains(&y)
+                && self
+                    .flag_pixel((563. + offset_x) as usize + u, y as usize)
+                    .is_some()
             {
                 hit = Some((
                     t,
-                    563 + u,
+                    (563. + offset_x) as usize + u,
                     y as usize,
                     0.84 + 0.10 * (u as f64 * 0.38 + self.tick as f64 * 0.09).cos(),
                 ));

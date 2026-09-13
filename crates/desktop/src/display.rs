@@ -116,6 +116,12 @@ impl Desktop {
                     }
                     return;
                 }
+                if i.key_pressed(Key::N)
+                    && !self.tutorial.active()
+                    && self.sim.world.outcome == Outcome::Won
+                {
+                    self.load_level(self.sim.world.level + 1);
+                }
                 if i.key_pressed(Key::Space) {
                     self.toggle_play();
                 }
@@ -238,7 +244,32 @@ impl Desktop {
     fn toolbox(&mut self, ctx: &Context, first: bool) {
         Window::new("fly & you").default_pos(pos2(10.,10.)).default_width(292.)
             .resizable(false).collapsible(true).show(ctx, |ui| {
-                let ready = !matches!(self.sim.phase, Phase::Loading | Phase::Restoring | Phase::Fault) && !self.saving;
+                let ready = !matches!(self.sim.phase, Phase::Loading | Phase::Restoring | Phase::Fault) && !self.saving && self.restore_name.is_none();
+                if !self.tutorial.active() {
+                    let mut level = self.sim.world.level;
+                    ui.add_enabled_ui(ready, |ui| {
+                        ComboBox::from_id_salt("campaign-level")
+                            .selected_text(format!("{} / 6   {}", level + 1, world_core::LEVELS[level].name))
+                            .show_ui(ui, |ui| {
+                                for (index, spec) in world_core::LEVELS.iter().enumerate() {
+                                    ui.selectable_value(&mut level, index, format!("{}   {}", index + 1, spec.name));
+                                }
+                            });
+                    });
+                    if first && level != self.sim.world.level { self.load_level(level); }
+                    if self.sim.world.level > 0 {
+                        ui.add(Label::new(self.sim.world.level_spec().rule).wrap());
+                        let status = crate::campaign_view::status(&self.sim.world);
+                        if !status.is_empty() { ui.label(RichText::new(status).weak()); }
+                    }
+                    if self.sim.world.outcome == Outcome::Won {
+                        if self.sim.world.level + 1 < world_core::LEVELS.len() {
+                            if ui.add_enabled(ready, Button::new("Next level  [N]")).clicked() && first {
+                                self.load_level(self.sim.world.level + 1);
+                            }
+                        } else { ui.label("Six levels. One very lucky fly."); }
+                    }
+                }
                 ui.horizontal(|ui| {
                     if ui.add_enabled(ready && !self.tutorial.active() && self.sim.world.outcome == Outcome::Running,
                         Button::new(if self.sim.want_pause { "Run  [Space]" } else { "Pause  [Space]" })).clicked() && first { self.toggle_play(); }
@@ -264,7 +295,11 @@ impl Desktop {
                     }
                     ui.add(Slider::new(&mut self.radius, if self.tool.solid() { 4.0..=24.0 } else { 1.0..=24.0 }).show_value(false).text("size"));
                 });
-                ui.label(if self.tool.solid() { "Scribble ground ahead. It won't wait for you." } else { "Ink sticks to surfaces. Yellow attracts; red repels." });
+                ui.label(if self.tool.solid() {
+                    if self.sim.world.level == 0 { "Scribble ground ahead. It won't wait for you." }
+                    else if self.sim.world.level_spec().ground_zones.is_empty() { "Fixed ground here. Use Ink to steer Fly." }
+                    else { "Ground stays inside the dashed boxes." }
+                } else { "Ink sticks to surfaces. Yellow attracts; red repels." });
                 if ready && self.sim.world.outcome == Outcome::Running {
                     let intent = match self.telemetry.motor_mode.as_str() {
                         "approach" => "Approaching yellow",
@@ -367,6 +402,9 @@ impl Desktop {
                 Color32::WHITE,
             );
         }
+        if !self.tutorial.active() {
+            crate::campaign_view::draw(&painter, rect, scale, &self.sim.world);
+        }
         if !self.tutorial.active() && ctx.input(|i| i.key_down(Key::C)) {
             for y in 0..90 {
                 for x in 0..160 {
@@ -448,7 +486,11 @@ impl Desktop {
                 boxr.center() + vec2(0., 22.),
                 Align2::CENTER_CENTER,
                 if won {
-                    "R to go again"
+                    if self.sim.world.level + 1 < world_core::LEVELS.len() {
+                        "N for next level · R to go again"
+                    } else {
+                        "All six done · R to go again"
+                    }
                 } else {
                     "R to try again"
                 },
@@ -480,6 +522,7 @@ impl Desktop {
             Phase::Loading | Phase::Restoring | Phase::Fault
         ) && self.sim.world.outcome == Outcome::Running
             && !self.saving
+            && self.restore_name.is_none()
             && self.tutorial.can_paint();
         // Consume the ordered events, including the press position. Sampling
         // only PointerState::interact_pos loses fast drags contained in one frame.

@@ -14,6 +14,17 @@ pub struct Tutorial {
 }
 
 impl Tutorial {
+    pub fn for_level(level: usize) -> Self {
+        if level == 0 {
+            return Self::default();
+        }
+        Self {
+            beat: DONE,
+            elapsed: 0.,
+            intro_started: true,
+            start_pending: false,
+        }
+    }
     pub fn awaiting_start(&self) -> bool {
         !self.intro_started
     }
@@ -120,6 +131,19 @@ pub fn smooth(t: f32) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn later_levels_are_ready_without_replaying_or_autostarting_tutorial() {
+        for level in 1..6 {
+            let mut intro = Tutorial::for_level(level);
+            assert!(!intro.awaiting_start());
+            assert!(!intro.active());
+            assert!(intro.can_paint());
+            assert!(intro.show_rail());
+            assert!(!intro.take_start());
+        }
+        assert!(Tutorial::for_level(0).awaiting_start());
+    }
 
     #[test]
     fn start_screen_holds_the_opening_and_enter_starts_only_once() {

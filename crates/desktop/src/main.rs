@@ -1,5 +1,6 @@
 mod app;
 mod brain_view;
+mod campaign_view;
 mod coordinator;
 mod display;
 mod tutorial;

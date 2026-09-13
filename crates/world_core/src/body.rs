@@ -34,6 +34,7 @@ impl World {
         if self.outcome != Outcome::Running || !a.steer.is_finite() || a.steer.abs() > 1. {
             return false;
         }
+        let old_swatter_phase = self.swatter_phase();
         let target = a.steer * 176.;
         self.actor.vx += (target - self.actor.vx).clamp(-1056. * DT, 1056. * DT);
         self.actor.vy = (self.actor.vy + 1100. * DT).min(320.);
@@ -80,18 +81,31 @@ impl World {
             }
             self.actor.grounded = self.collides(self.actor.x, self.actor.y + 0.02);
             let bounds = [self.actor.x - 6., self.actor.y - 8., 12., 16.];
-            if self.actor.y > HEIGHT as f64 + 16.
-                || self.hazards.iter().any(|r| overlaps(*r, bounds))
+            // Feet touching the plate count, without requiring penetration of
+            // its collision surface. Ink and drawings cannot press a button.
+            if !self.button_pressed
+                && self.level_spec().button.is_some_and(|r| {
+                    overlaps(r, [bounds[0], bounds[1], bounds[2], bounds[3] + 0.05])
+                })
             {
+                self.button_pressed = true;
+                self.revision += 1;
+            }
+            if self.actor.y > HEIGHT as f64 + 16. || self.hazard_at(bounds) {
                 self.outcome = Outcome::Failed;
                 break;
             }
-            if overlaps(bounds, self.goal) {
+            if overlaps(bounds, self.goal)
+                && (self.level_spec().button.is_none() || self.button_pressed)
+            {
                 self.outcome = Outcome::Won;
                 break;
             }
         }
         self.tick += 1;
+        if self.swatter_phase() != old_swatter_phase {
+            self.revision += 1;
+        }
         true
     }
 }

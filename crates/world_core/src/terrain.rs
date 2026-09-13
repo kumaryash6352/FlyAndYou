@@ -129,7 +129,7 @@ impl World {
                 }
             }
             if s.tool.solid() {
-                if self.base[i] != 0 {
+                if self.base[i] != 0 || !self.ground_allowed(i) {
                     continue;
                 }
                 let after = if s.tool.erase() { 0 } else { 1 };
@@ -210,6 +210,13 @@ impl World {
                     return Err("Give the fly a little room".into());
                 }
             }
+        }
+        if e.solid {
+            let mut next = self.solid.clone();
+            for c in &e.changes {
+                next[c.index] = c.after;
+            }
+            self.validate_ground(&next)?;
         }
         if !e.solid {
             let mut pixels = std::collections::BTreeMap::<usize, [u8; 4]>::new();

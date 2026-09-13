@@ -160,7 +160,7 @@ impl Desktop {
                     // a save taken before the first play observation.
                     let name = self.restore_name.take().unwrap_or_else(|| "initial".into());
                     if self.restore_world.is_none() {
-                        self.restore_world = Some(World::bridge());
+                        self.restore_world = Some(World::level(self.sim.world.level));
                     }
                     self.sim.reset();
                     self.send(Command::Restore {
@@ -215,6 +215,7 @@ impl Desktop {
                             continue;
                         }
                         self.sim.restored(w, step_id);
+                        self.brain_view.reset();
                         self.telemetry = telemetry;
                         self.visual_revision = u64::MAX;
                         self.vision_texture = None;
@@ -311,7 +312,7 @@ impl Desktop {
                 self.sim.play();
             }
         }
-        if !self.saving && !self.tutorial.active() {
+        if !self.saving && self.restore_name.is_none() && !self.tutorial.active() {
             if let Some((r, rgb)) = self.sim.request() {
                 self.vision_hash = r.rgb_sha256.clone();
                 self.sent_step = Some(r.step_id);
@@ -338,10 +339,70 @@ impl Desktop {
         }
     }
     pub fn reset(&mut self, bookmark: bool) {
-        self.tutorial.cancel_start();
-        if self.tutorial.active() {
+        if matches!(self.sim.phase, Phase::Loading | Phase::Restoring)
+            || (self.restore_name.is_some() && self.sim.phase != Phase::Fault)
+        {
+            return;
+        }
+        let world = if bookmark {
+            std::fs::read(self.run_dir.join("bookmark.world.json"))
+                .map_err(|e| e.to_string())
+                .and_then(|b| World::restore(&b))
+        } else {
+            // A failed level transition can be retried with R, even when its
+            // restore request was still queued when the worker stopped.
+            let level = self
+                .restore_world
+                .as_ref()
+                .map_or(self.sim.world.level, |w| w.level);
+            Ok(World::level(level))
+        };
+        let world = match world {
+            Ok(world) => world,
+            Err(error) => {
+                self.notice = format!("Cannot restore bookmark: {error}");
+                return;
+            }
+        };
+        if bookmark || world.level > 0 {
+            self.tutorial = crate::tutorial::Tutorial::for_level(1);
+        } else if self.tutorial.active() {
             self.tutorial.skip();
         }
+        self.queue_restore(world, if bookmark { "bookmark" } else { "initial" });
+    }
+    pub fn load_level(&mut self, level: usize) {
+        if level >= world_core::LEVELS.len()
+            || self.saving
+            || self.restore_name.is_some()
+            || matches!(
+                self.sim.phase,
+                Phase::Loading | Phase::Restoring | Phase::Fault
+            )
+        {
+            return;
+        }
+        self.queue_restore(World::level(level), "initial");
+        self.tutorial = crate::tutorial::Tutorial::for_level(level);
+        self.zoom = 0.7;
+        self.pan = egui::Vec2::ZERO;
+        self.help = false;
+        self.details = false;
+        self.select_tool(
+            if world_core::LEVELS[level].ground_zones.is_empty() && level != 0 {
+                Tool::Ink
+            } else {
+                Tool::Solid
+            },
+        );
+        self.color = [232, 186, 60];
+        if let Some(demos) = &mut self.color_demos {
+            demos.reset();
+        }
+        self.log(serde_json::json!({"event":"select_level","level":level+1,"name":world_core::LEVELS[level].name}));
+    }
+    fn queue_restore(&mut self, world: World, name: &str) {
+        self.tutorial.cancel_start();
         self.stroke = None;
         self.pending_strokes.clear();
         self.stroke_dirty = false;
@@ -349,18 +410,6 @@ impl Desktop {
         self.pending_undo = None;
         self.want_save = false;
         self.sim.pause();
-        let name = if bookmark { "bookmark" } else { "initial" };
-        let world = if bookmark {
-            std::fs::read(self.run_dir.join("bookmark.world.json"))
-                .map_err(|e| e.to_string())
-                .and_then(|b| World::restore(&b))
-        } else {
-            Ok(World::bridge())
-        };
-        let Ok(world) = world else {
-            self.notice = "No saved experiment yet.".into();
-            return;
-        };
         if self.sim.phase == Phase::Fault {
             self.worker = None;
             let run_name = self.run_dir.file_name().unwrap().to_string_lossy();
@@ -394,17 +443,7 @@ impl Desktop {
         }
     }
     pub fn replay_tutorial(&mut self) {
-        self.reset(false);
-        self.tutorial = crate::tutorial::Tutorial::default();
-        if let Some(demos) = &mut self.color_demos {
-            demos.reset();
-        }
-        self.zoom = 0.7;
-        self.pan = egui::Vec2::ZERO;
-        self.help = false;
-        self.details = false;
-        self.select_tool(Tool::Solid);
-        self.color = [232, 186, 60];
+        self.load_level(0);
     }
     pub fn undo(&mut self, redo: bool) {
         if self.sim.phase != Phase::Paused || self.saving {

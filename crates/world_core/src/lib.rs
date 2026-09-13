@@ -1,9 +1,11 @@
 mod body;
 mod flag;
+mod levels;
 mod sensory;
 mod terrain;
 mod tutorial;
 mod vision;
+pub use levels::{LEVELS, LevelSpec};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 pub use terrain::{Change, Edit, Stroke, Tool, capsule_cells};
@@ -35,6 +37,12 @@ pub enum Outcome {
 }
 #[derive(Clone, Serialize, Deserialize)]
 pub struct World {
+    #[serde(default, skip_serializing_if = "levels::is_zero")]
+    pub level: usize,
+    #[serde(default, skip_serializing_if = "levels::is_false")]
+    pub button_pressed: bool,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub layout_hash: String,
     pub base: Vec<u8>,
     pub solid: Vec<u8>,
     pub paint: Vec<u8>,
@@ -78,6 +86,9 @@ impl World {
             }
         }
         Self {
+            level: 0,
+            button_pressed: false,
+            layout_hash: String::new(),
             base,
             solid: vec![0; COLS * ROWS],
             paint: vec![0; WIDTH * HEIGHT * 4],
@@ -113,7 +124,8 @@ impl World {
             return Err("Checkpoint is too large".into());
         }
         let w: Self = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
-        if w.base.len() != COLS * ROWS
+        if w.level >= LEVELS.len()
+            || w.base.len() != COLS * ROWS
             || w.solid.len() != COLS * ROWS
             || w.paint.len() != WIDTH * HEIGHT * 4
             || w.base.iter().chain(&w.solid).any(|v| *v > 1)
@@ -127,13 +139,17 @@ impl World {
         {
             return Err("Invalid world checkpoint".into());
         }
-        if w.base != Self::bridge().base
-            || w.goal != Self::bridge().goal
-            || w.protected != Self::bridge().protected
-            || w.hazards != Self::bridge().hazards
+        let original = Self::level(w.level);
+        if w.base != original.base
+            || w.goal != original.goal
+            || w.protected != original.protected
+            || w.hazards != original.hazards
+            || w.layout_hash != original.layout_hash
+            || (w.button_pressed && w.level_spec().button.is_none())
         {
             return Err("Incompatible level checkpoint".into());
         }
+        w.validate_ground(&w.solid)?;
         Ok(w)
     }
     pub fn state_hash(&self) -> String {
@@ -147,7 +163,9 @@ impl World {
             return false;
         }
         let i = y as usize * COLS + x as usize;
-        self.base[i] != 0 || self.solid[i] != 0
+        self.base[i] != 0
+            || self.solid[i] != 0
+            || self.mechanism_solid([(x * 4) as f64, (y * 4) as f64, 4., 4.])
     }
 }
 pub fn overlaps(a: [f64; 4], b: [f64; 4]) -> bool {

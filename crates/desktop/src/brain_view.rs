@@ -76,6 +76,12 @@ impl BrainView {
         }
         view
     }
+    pub fn reset(&mut self) {
+        self.tick = u64::MAX;
+        self.texture = None;
+        self.baseline.clear();
+        self.glow.clear();
+    }
     pub fn draw(&mut self, ui: &mut Ui, rect: Rect, tick: u64, rates: &[f32]) {
         if self.texture.is_none() || self.tick != tick {
             if self.baseline.len() != self.neurons.len() || tick < self.tick {

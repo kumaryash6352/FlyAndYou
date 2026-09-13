@@ -50,31 +50,59 @@ impl World {
                 }
             }
         }
-        for y in 242..280 {
-            for x in 560..580 {
-                if show_goal && let Some(c) = crate::flag::flag_pixel(x, y) {
+        for y in 0..HEIGHT {
+            for x in 0..WIDTH {
+                if show_goal && let Some(c) = self.flag_pixel(x, y) {
                     pixel(&mut rgb, x as i32, y as i32, c);
                 }
-            }
-        }
-        for y in 352..360 {
-            for x in 192..288 {
-                pixel(
-                    &mut rgb,
-                    x,
-                    y,
-                    if (x + y) % 8 < 3 {
-                        [154, 84, 55]
+                let rect = [x as f64, y as f64, 1., 1.];
+                if self.hazards.iter().any(|r| overlaps(*r, rect)) {
+                    pixel(
+                        &mut rgb,
+                        x as i32,
+                        y as i32,
+                        if (x + y) % 8 < 3 {
+                            [154, 84, 55]
+                        } else {
+                            [192, 139, 98]
+                        },
+                    );
+                }
+                if self.mechanism_solid(rect) {
+                    let plate = self.level_spec().button.is_some_and(|r| overlaps(r, rect));
+                    let c = if plate {
+                        if self.button_pressed {
+                            [126, 158, 116]
+                        } else {
+                            [148, 148, 137]
+                        }
+                    } else if (x + y) % 9 < 3 {
+                        [62, 67, 61]
                     } else {
-                        [192, 139, 98]
-                    },
-                );
+                        [140, 145, 130]
+                    };
+                    pixel(&mut rgb, x as i32, y as i32, c);
+                }
+                if self.swatter_rect().is_some_and(|r| overlaps(r, rect)) {
+                    let c = match self.swatter_phase() {
+                        1 => [177, 127, 70],
+                        2 => {
+                            if x % 8 < 2 || y % 8 < 2 {
+                                [54, 48, 43]
+                            } else {
+                                [121, 105, 89]
+                            }
+                        }
+                        _ => [100, 108, 95],
+                    };
+                    pixel(&mut rgb, x as i32, y as i32, c);
+                }
             }
         }
         for (p, ink) in self.paint.chunks_exact(4).enumerate() {
             if ink[3] == 255
                 && self.paintable(p % WIDTH, p / WIDTH)
-                && (show_goal || crate::flag::flag_pixel(p % WIDTH, p / WIDTH).is_none())
+                && (show_goal || self.flag_pixel(p % WIDTH, p / WIDTH).is_none())
             {
                 rgb[p * 3..p * 3 + 3].copy_from_slice(&ink[..3]);
             }

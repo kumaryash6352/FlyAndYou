@@ -80,8 +80,7 @@ impl World {
                     if hit_t >= t {
                         break;
                     }
-                    let hazard = (48..72).contains(&cx) && cy >= 88;
-                    if self.occupied(cx, cy) || hazard {
+                    if self.ray_surface(cx, cy) {
                         t = hit_t;
                         let x = self.actor.x + dx * (t + 0.001);
                         let y = self.actor.y + dy * (t + 0.001);

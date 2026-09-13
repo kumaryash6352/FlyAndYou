@@ -190,6 +190,27 @@ mod tests {
         assert_eq!(c.world.tick, 0);
     }
     #[test]
+    fn campaign_switch_resets_at_new_epoch_and_resumes_paused() {
+        let mut c = ready();
+        let (r, _) = c.request().unwrap();
+        c.pause();
+        c.accept(&Reply::for_request(&r, 0.52)).unwrap();
+        for _ in 0..10 {
+            c.advance(0.01);
+        }
+        c.reset();
+        c.restored(World::level(4), 0);
+        assert!(!c.accept(&Reply::for_request(&r, 0.52)).unwrap());
+        assert_eq!(c.world.level, 4);
+        assert_eq!(c.world.tick, 0);
+        assert_eq!(c.phase, Phase::Paused);
+        assert!(c.request().is_none());
+        c.play();
+        let (fresh, _) = c.request().unwrap();
+        assert_eq!(fresh.physics_tick, 0);
+        assert_ne!(fresh.epoch, r.epoch);
+    }
+    #[test]
     fn duplicate_action_is_consumed_once() {
         let mut c = ready();
         let (r, _) = c.request().unwrap();
