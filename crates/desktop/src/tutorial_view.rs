@@ -112,7 +112,7 @@ pub fn map_rect(area: Rect, intro: &Tutorial) -> Rect {
     Rect::from_min_size(area.center() - center * scale, vec2(640., 360.) * scale)
 }
 
-fn arrow(painter: &Painter, start: Pos2, end: Pos2) {
+pub(crate) fn arrow(painter: &Painter, start: Pos2, end: Pos2) {
     let delta = end - start;
     let normal = vec2(-delta.y, delta.x).normalized();
     let points: Vec<_> = (0..=8)

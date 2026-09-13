@@ -83,6 +83,13 @@ impl BrainView {
         self.glow.clear();
     }
     pub fn draw(&mut self, ui: &mut Ui, rect: Rect, tick: u64, rates: &[f32]) {
+        self.paint(ui, rect, tick, rates);
+        let response = ui.interact(rect, Id::new("brain-volume"), Sense::hover());
+        response.on_hover_text(if self.error.is_empty() {
+            "MaleCNS anatomy · two projections\n336 sampled neurons; orange highlights the strongest local activity increases above their recent baseline."
+        } else { &self.error });
+    }
+    pub(crate) fn paint(&mut self, ui: &mut Ui, rect: Rect, tick: u64, rates: &[f32]) {
         if self.texture.is_none() || self.tick != tick {
             if self.baseline.len() != self.neurons.len() || tick < self.tick {
                 self.baseline = vec![0.0002; self.neurons.len()];
@@ -167,9 +174,5 @@ impl BrainView {
                 Color32::WHITE,
             );
         }
-        let response = ui.interact(rect, Id::new("brain-volume"), Sense::hover());
-        response.on_hover_text(if self.error.is_empty() {
-            "MaleCNS anatomy · two projections\n336 sampled neurons; orange highlights the strongest local activity increases above their recent baseline."
-        } else { &self.error });
     }
 }

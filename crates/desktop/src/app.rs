@@ -145,6 +145,9 @@ impl Desktop {
     pub fn update(&mut self) {
         let dt = self.last_frame.elapsed().as_secs_f64();
         self.last_frame = Instant::now();
+        self.update_with_dt(dt);
+    }
+    pub(crate) fn update_with_dt(&mut self, dt: f64) {
         self.sim.advance(dt);
         loop {
             let event = self.worker.as_ref().and_then(|w| w.rx.try_recv().ok());
@@ -424,7 +427,7 @@ impl Desktop {
         }
         self.log(serde_json::json!({"event":"select_level","level":level+1,"name":world_core::LEVELS[level].name}));
     }
-    fn queue_restore(&mut self, world: World, name: &str) {
+    pub(crate) fn queue_restore(&mut self, world: World, name: &str) {
         self.music.reset();
         self.tutorial.cancel_start();
         self.edit_notice = None;

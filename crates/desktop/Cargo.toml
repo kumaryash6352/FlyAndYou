@@ -2,6 +2,11 @@
 name = "fly-and-you"
 version = "0.1.0"
 edition = "2024"
+default-run = "fly-and-you"
+
+[[bin]]
+name = "fly-trailer"
+path = "src/trailer_main.rs"
 
 [dependencies]
 world_core = { path = "../world_core" }

@@ -27,7 +27,7 @@ pub fn configure(ctx: &Context) {
 fn button(ui: &mut Ui, s: &str, selected: bool) -> Response {
     ui.add(Button::new(s).selected(selected))
 }
-fn fly(p: &Painter, c: Pos2, scale: f32, tick: u64, vx: f64, falling: bool) {
+pub(crate) fn fly(p: &Painter, c: Pos2, scale: f32, tick: u64, vx: f64, falling: bool) {
     let flap = (tick / 3) % 3;
     let facing = if vx < -0.01 { -1. } else { 1. };
     let leg = (tick / 5) % 2;
